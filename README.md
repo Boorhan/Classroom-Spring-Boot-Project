@@ -49,5 +49,4 @@ This project uses Java as the programming language and Maven as the build tool.
 
 ### Other Common Files
 - **`README.md`**: A markdown file where you document your project.
-- **`Dockerfile`**: Contains instructions to build the Docker image if you are containerizing your application with Docker.
 - **`.gitignore`**: Specifies files or directories that should not be tracked by Git (e.g., `target/`, `.idea/`, etc.).
