@@ -1,10 +1,15 @@
-# Classroom Spring Boot Prtoject
+# Classroom Spring Boot Project
 
 This project aims to facilitate communication between teachers and students. It provides a platform where both students and teachers can log in to their respective accounts. Teachers can create multiple courses, and students can enroll in various courses. Additionally, teachers can suggest books related to the courses. The platform enhances interaction and communication between teachers and students.
 
 ---
 
 ### Key Features:
+
+- **General Features:**
+  - Different login and registration processes for teachers and students.
+  - Separate dashboards for both teachers and students after login.
+  
 - **Teacher Features:**
   - Create and manage multiple courses.
   - Suggest relevant books and materials for each course.
@@ -12,11 +17,6 @@ This project aims to facilitate communication between teachers and students. It 
 - **Student Features:**
   - Enroll in multiple courses offered by different teachers.
   - Access suggested books and resources.
-
-- **General Features:**
-  - Different login and registration processes for teachers and students.
-  - Separate dashboards for both teachers and students after login.
-
 ---
 
 ### Versions
