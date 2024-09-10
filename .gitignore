@@ -3,3 +3,6 @@
 
 ### Environment ###
 .env
+
+### Auto Generated File ###
+target/
