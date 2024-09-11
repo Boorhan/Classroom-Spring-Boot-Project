@@ -1,13 +1,14 @@
 package com.demo.classroom.Entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,17 +16,18 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Student {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long studentId;
+    @Column(updatable = false, nullable = false)
+    private Long id;
 
-    @Lob  // This will store the image as a BLOB in the database
-    private byte[] image;  // The image data is stored as a byte array
+    private String imageUrl;
     
     private String name;
-    private String rollNo;
+    private String roll;
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
