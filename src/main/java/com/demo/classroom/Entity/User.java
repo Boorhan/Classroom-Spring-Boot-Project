@@ -35,6 +35,6 @@ public class User {
 
     @NotBlank(message = "Password is mandatory")
     @Size(min = 8, message = "Password must be at least 8 characters long")
-    @Column(updatable = true, nullable=false)
+    @Column(nullable=false)
     private String password;
 }
