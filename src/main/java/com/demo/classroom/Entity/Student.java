@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,7 +27,10 @@ public class Student {
 
     private String imageUrl;
     
+    @NotBlank(message = "Student must have a name.")
+    @Column(nullable = false)
     private String name;
+
     private String roll;
 
     @OneToOne
