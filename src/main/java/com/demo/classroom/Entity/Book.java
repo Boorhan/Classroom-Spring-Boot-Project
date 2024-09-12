@@ -27,6 +27,7 @@ public class Book {
     private Long id;
 
     @NotBlank(message = "Book must have a name.")
+    @Column(nullable = false)
     private String name;
 
     private String author;
