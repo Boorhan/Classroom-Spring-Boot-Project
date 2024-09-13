@@ -33,9 +33,9 @@ public class Course {
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Book> books = new ArrayList<>();
 
-    @ManyToMany(mappedBy = "student_courses")
+    @ManyToMany(mappedBy = "studentCourses")
     private List<Student> students = new ArrayList<>();
 
-    @ManyToMany(mappedBy = "teacher_courses")
+    @ManyToMany(mappedBy = "teacherCourses")
     private List<Teacher> teachers = new ArrayList<>();
 }
