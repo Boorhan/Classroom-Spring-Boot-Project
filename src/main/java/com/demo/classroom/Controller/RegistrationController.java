@@ -28,34 +28,32 @@ public class RegistrationController {
     private StudentRepository studentRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // Inject the password encoder
+    private PasswordEncoder passwordEncoder; 
 
     @PostMapping(value = "/signup", consumes = "application/json")
     public ResponseEntity<String> registerUser(@RequestBody RegistrationRequest request) {
-        // Extract user and role from the request
+
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        // Encode the password before saving
+
         String encodedPassword = passwordEncoder.encode(request.getPassword());
         user.setPassword(encodedPassword);
 
         String role = request.getRole();
         String name = request.getName();
 
-        // Save the user data
         userRepository.save(user);
 
-        // Handle role-specific registration
         if ("teacher".equalsIgnoreCase(role)) {
             Teacher teacher = new Teacher();
-            teacher.setUser(user); // Associate the teacher with the user
+            teacher.setUser(user);
             teacher.setName(name);
             teacherRepository.save(teacher);
             return ResponseEntity.ok("Teacher registered successfully");
         } else if ("student".equalsIgnoreCase(role)) {
             Student student = new Student();
-            student.setUser(user); // Associate the student with the user
+            student.setUser(user); 
             student.setName(name);
             studentRepository.save(student);
             return ResponseEntity.ok("Student registered successfully");
