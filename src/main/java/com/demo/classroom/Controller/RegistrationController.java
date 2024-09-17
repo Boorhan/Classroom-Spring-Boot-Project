@@ -3,6 +3,7 @@ package com.demo.classroom.Controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,9 @@ import com.demo.classroom.Entity.User;
 import com.demo.classroom.Repository.StudentRepository;
 import com.demo.classroom.Repository.TeacherRepository;
 import com.demo.classroom.Repository.UserRepository;
+import com.demo.classroom.Service.StudentService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/req")
@@ -25,13 +29,25 @@ public class RegistrationController {
     private TeacherRepository teacherRepository;
 
     @Autowired
-    private StudentRepository studentRepository;
+    private StudentService studentService;
 
     @Autowired
     private PasswordEncoder passwordEncoder; 
 
     @PostMapping(value = "/signup", consumes = "application/json")
-    public ResponseEntity<String> registerUser(@RequestBody RegistrationRequest request) {
+    public ResponseEntity<String> registerUser(@Valid @RequestBody RegistrationRequest request, BindingResult result) {
+
+        if (result.hasErrors()) {
+            return ResponseEntity.badRequest().body("Validation failed: " + result.getAllErrors());
+        }
+
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+            return ResponseEntity.badRequest().body("Username is already taken");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            return ResponseEntity.badRequest().body("Email is already in use");
+        }
 
         User user = new User();
         user.setUsername(request.getUsername());
@@ -55,7 +71,7 @@ public class RegistrationController {
             Student student = new Student();
             student.setUser(user); 
             student.setName(name);
-            studentRepository.save(student);
+            studentService.save(student);
             return ResponseEntity.ok("Student registered successfully");
         } else {
             return ResponseEntity.badRequest().body("Invalid role selected");
