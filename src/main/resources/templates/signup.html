@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Form</title>
+    <link rel="stylesheet" href="/css/reg.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Registration Form</h2>
+        <form id="registrationForm" action="/register" method="POST">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+              <label for="name"> Name:</label>
+              <input type="text" id="name" name="name" required>
+            </div>
+         
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="passwordcon">Confirm Password:</label>
+                <input type="password" id="passwordcon" name="confirmPassword" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Select Role:</label>
+                <input type="radio" id="student" name="role" value="student" required>
+                <label for="student">Student</label>
+                <input type="radio" id="teacher" name="role" value="teacher" required>
+                <label for="teacher">Teacher</label>
+            </div>
+
+            <button type="submit" id="submit" class="btn-submit">Register</button>
+        </form>
+    </div>
+
+    <script>
+        const submitButton = document.getElementById("submit");
+
+        submitButton.addEventListener('click', (event) => {
+            event.preventDefault(); // Prevent form submission and page reload
+
+            const username = document.getElementById('username').value;
+            const name = document.getElementById('name').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('passwordcon').value;
+            const email = document.getElementById('email').value;
+            const role = document.querySelector('input[name="role"]:checked')?.value;
+
+            if (!role) {
+                alert('Please select a role');
+                return;
+            }
+
+            if (password === confirmPassword) {
+                const data = {
+                    user: {
+                        username,
+                        email,
+                        password
+                    },
+                    role, 
+                    name 
+                };
+
+                const jsonData = JSON.stringify(data);
+
+                fetch('/req/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: jsonData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Registration successful');
+                    } else {
+                        return response.text().then(text => {
+                            alert('Error: ' + text); // Show the error message from the server
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred during registration');
+                });
+            } else {
+                alert('Passwords do not match');
+            }
+        });
+    </script>
+</body>
+</html>
