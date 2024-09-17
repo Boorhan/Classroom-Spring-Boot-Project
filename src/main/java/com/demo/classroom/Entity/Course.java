@@ -15,6 +15,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -33,9 +34,9 @@ public class Course {
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Book> books = new ArrayList<>();
 
-    @ManyToMany(mappedBy = "studentCourses")
+    @ManyToMany(mappedBy = "courses")
     private List<Student> students = new ArrayList<>();
 
-    @ManyToMany(mappedBy = "teacherCourses")
+    @ManyToMany(mappedBy = "courses")
     private List<Teacher> teachers = new ArrayList<>();
 }

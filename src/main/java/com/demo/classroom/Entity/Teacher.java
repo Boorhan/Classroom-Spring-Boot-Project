@@ -44,5 +44,5 @@ public class Teacher {
         joinColumns = @JoinColumn(name = "teacher_id"),
         inverseJoinColumns = @JoinColumn(name = "course_id")
     )
-    private List<Course> teacherCourses = new ArrayList<>();
+    private List<Course> courses = new ArrayList<>();
 }
