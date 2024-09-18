@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.demo.classroom.Entity.Student;
 import com.demo.classroom.Entity.Teacher;
 import com.demo.classroom.Entity.User;
-import com.demo.classroom.Repository.StudentRepository;
 import com.demo.classroom.Repository.TeacherRepository;
 import com.demo.classroom.Repository.UserRepository;
 import com.demo.classroom.Service.StudentService;
@@ -38,7 +37,12 @@ public class RegistrationController {
     public ResponseEntity<String> registerUser(@Valid @RequestBody RegistrationRequest request, BindingResult result) {
 
         if (result.hasErrors()) {
-            return ResponseEntity.badRequest().body("Validation failed: " + result.getAllErrors());
+            StringBuilder errorMessage = new StringBuilder("Validation failed: ");
+            result.getFieldErrors().forEach(error -> {
+                errorMessage.append("Field '").append(error.getField()).append("' - ")
+                            .append(error.getDefaultMessage()).append(". ");
+            });
+            return ResponseEntity.badRequest().body(errorMessage.toString());
         }
 
 
@@ -59,18 +63,18 @@ public class RegistrationController {
         String role = request.getRole();
         String name = request.getName();
 
-        userRepository.save(user);
-
         if ("teacher".equalsIgnoreCase(role)) {
             Teacher teacher = new Teacher();
             teacher.setUser(user);
             teacher.setName(name);
+            userRepository.save(user);
             teacherRepository.save(teacher);
             return ResponseEntity.ok("Teacher registered successfully");
         } else if ("student".equalsIgnoreCase(role)) {
             Student student = new Student();
             student.setUser(user); 
             student.setName(name);
+            userRepository.save(user);
             studentService.save(student);
             return ResponseEntity.ok("Student registered successfully");
         } else {
