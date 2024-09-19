@@ -8,7 +8,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.demo.classroom.Config.JwtService;
 import com.demo.classroom.DTO.LoginDTO;
 import com.demo.classroom.DTO.RegistrationDTO;
 import com.demo.classroom.Entity.Student;
@@ -25,8 +25,11 @@ import com.demo.classroom.Entity.User;
 import com.demo.classroom.Repository.TeacherRepository;
 import com.demo.classroom.Repository.UserRepository;
 import com.demo.classroom.Service.StudentService;
+import com.demo.classroom.Service.UserService;
 
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 @RestController
 @RequestMapping("/req")
@@ -45,6 +48,18 @@ public class AuthController {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private UserService userService;
+
+    @GetMapping(value= "/dashboard")
+    public ResponseEntity<String> dashboard() {
+        return ResponseEntity.ok("You are in the dashboard");
+    }
+    
 
     @PostMapping(value = "/signup", consumes = "application/json")
     public ResponseEntity<String> registerUser(@Valid @RequestBody RegistrationDTO request, BindingResult result) {
@@ -115,12 +130,14 @@ public class AuthController {
 
         try {
             
-
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword())
             );
-            
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            var authUser = userService.loadUserByUsername(loginDTO.getUsername());
+
+            var jwtToken = jwtService.generateToken(authUser);
+
             boolean isTeacher = authentication.getAuthorities().stream()
                 .anyMatch(role -> role.getAuthority().equals("ROLE_TEACHER"));
             boolean isStudent = authentication.getAuthorities().stream()
@@ -129,11 +146,11 @@ public class AuthController {
             if (isTeacher) {
                 return ResponseEntity
                         .status(HttpStatus.OK)
-                        .body("Login as teacher is successful");
+                        .body("Login as teacher is successful. Token: "+jwtToken);
             } else if (isStudent) {
                 return ResponseEntity
                         .status(HttpStatus.OK)
-                        .body("Login as student is successful");
+                        .body("Login as student is successful. Token: "+jwtToken);
             } else {
                 return ResponseEntity
                         .status(HttpStatus.UNAUTHORIZED)
