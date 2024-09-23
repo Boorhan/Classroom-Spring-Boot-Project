@@ -3,6 +3,7 @@ package com.demo.classroom.Controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -21,10 +22,10 @@ import jakarta.validation.Valid;
 
 @RestController
 public class AuthController {
-    private final AuthService registrationService;
+    private final AuthService authService;
 
-    public AuthController(AuthService registrationService) {
-        this.registrationService = registrationService;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }   
 
     @PostMapping(value = "/signup", consumes = "application/json", produces = "application/json")
@@ -37,7 +38,7 @@ public class AuthController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
 
-        ApiResponse<Void> apiResponse = registrationService.registerUser(request);
+        ApiResponse<Void> apiResponse = authService.registerUser(request);
         if (apiResponse.isSuccess()) {
             return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
         } else {
