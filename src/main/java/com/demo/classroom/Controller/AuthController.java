@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.demo.classroom.DTO.ApiResponse;
 import com.demo.classroom.DTO.RegistrationDTO;
-import com.demo.classroom.Service.RegistrationService;
+import com.demo.classroom.Service.AuthService;
 import com.demo.classroom.Utility.Constants;
 import com.demo.classroom.Utility.ErrorMessages;
 
@@ -21,9 +21,9 @@ import jakarta.validation.Valid;
 
 @RestController
 public class AuthController {
-    private final RegistrationService registrationService;
+    private final AuthService registrationService;
 
-    public AuthController(RegistrationService registrationService) {
+    public AuthController(AuthService registrationService) {
         this.registrationService = registrationService;
     }   
 

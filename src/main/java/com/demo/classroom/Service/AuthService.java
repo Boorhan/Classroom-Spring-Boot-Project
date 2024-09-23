@@ -1,4 +1,6 @@
 package com.demo.classroom.Service;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -8,6 +10,7 @@ import com.demo.classroom.DTO.RegistrationDTO;
 import com.demo.classroom.Entity.Student;
 import com.demo.classroom.Entity.Teacher;
 import com.demo.classroom.Entity.User;
+import com.demo.classroom.Repository.StudentRepository;
 import com.demo.classroom.Repository.TeacherRepository;
 import com.demo.classroom.Repository.UserRepository;
 import com.demo.classroom.Utility.Constants;
@@ -16,7 +19,7 @@ import com.demo.classroom.Utility.Constants.Role;
 import jakarta.transaction.Transactional;
 
 @Service
-public class RegistrationService {
+public class AuthService {
 
     @Autowired
     private UserRepository userRepository;
@@ -25,7 +28,7 @@ public class RegistrationService {
     private TeacherRepository teacherRepository;
 
     @Autowired
-    private StudentService studentService;
+    private StudentRepository studentRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -64,12 +67,34 @@ public class RegistrationService {
             student.setUser(user);
             student.setName(name);
             userRepository.save(user);
-            studentService.save(student);
+            student.setRoll(generateRollNumber());
+            studentRepository.save(student);
             ApiResponse<Void>  apiResponse = new ApiResponse<Void>(true, Constants.STUDENT_REG_SUCCESSFULL.getMessage());
             return apiResponse;
         } else {
             ApiResponse<Void> apiResponse = new ApiResponse<Void>(false, Constants.INVALID_ROLE.getMessage());
             return apiResponse;
         }
+
+        
+    }
+    private String generateRollNumber() {
+        String prefix = "Sc10A";
+        
+            Optional<Student> lastStudent = studentRepository.findFirstByOrderByRollDesc();
+        
+            int nextRollNumber = lastStudent.map(student -> {
+                String lastRollNumber = student.getRoll();
+                if (lastRollNumber == null || lastRollNumber.length() <= prefix.length()) {
+                    return 1;
+                }
+                String sequentialPart = lastRollNumber.substring(prefix.length());
+                return Integer.parseInt(sequentialPart) + 1; 
+            }).orElse(1); 
+        
+            
+            String formattedRollNumber = String.format("%03d", nextRollNumber);
+        
+            return prefix + formattedRollNumber;
     }
 }
