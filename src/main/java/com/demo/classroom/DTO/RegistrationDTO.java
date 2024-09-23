@@ -1,11 +1,13 @@
-package com.demo.classroom.Controller;
+package com.demo.classroom.DTO;
+import com.demo.classroom.Utility.Role;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class RegistrationRequest {
+public class RegistrationDTO {
     @NotBlank(message = "Username is mandatory")
     @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
     private String username;
@@ -18,9 +20,8 @@ public class RegistrationRequest {
     @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
 
-    @NotBlank(message = "Role should be teacher or student")
-    private String role; 
+    private Role role; 
 
-    @NotBlank(message = "Can't be empty")
+    @NotBlank(message = "Name is mandatory")
     private String name;  
 }

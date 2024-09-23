@@ -1,5 +1,7 @@
 package com.demo.classroom.Entity;
 
+import com.demo.classroom.Validation.ValidPassword;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -34,7 +36,7 @@ public class User {
     private String email;
 
     @NotBlank(message = "Password is mandatory")
-    @Size(min = 8, message = "Password must be at least 8 characters long")
+    @ValidPassword(message = "Password must be at least 8 characters long, contain an uppercase letter, a digit, and a special character")
     @Column(nullable=false)
     private String password;
 }
