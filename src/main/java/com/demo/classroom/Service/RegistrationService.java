@@ -3,14 +3,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.demo.classroom.DTO.ApiResponse;
 import com.demo.classroom.DTO.RegistrationDTO;
 import com.demo.classroom.Entity.Student;
 import com.demo.classroom.Entity.Teacher;
 import com.demo.classroom.Entity.User;
 import com.demo.classroom.Repository.TeacherRepository;
 import com.demo.classroom.Repository.UserRepository;
-import com.demo.classroom.Utility.Role;
-import com.demo.classroom.Utility.Exception.UserAlreadyExistsException;
+import com.demo.classroom.Utility.Constants;
+import com.demo.classroom.Utility.Constants.Role;
 
 import jakarta.transaction.Transactional;
 
@@ -30,13 +31,15 @@ public class RegistrationService {
     private PasswordEncoder passwordEncoder;
 
     @Transactional
-    public String registerUser(RegistrationDTO request) {
+    public ApiResponse<Void> registerUser(RegistrationDTO request) {
         
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new UserAlreadyExistsException("Username is already taken");
+            ApiResponse<Void> apiResponse = new ApiResponse<Void>(false, Constants.USERNAME_TAKEN.getMessage());
+            return apiResponse;
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new UserAlreadyExistsException("Email is already in use");
+            ApiResponse<Void> apiResponse = new ApiResponse<Void>(false, Constants.EMAIL_TAKEN.getMessage());
+            return apiResponse;
         }
 
         User user = new User();
@@ -54,16 +57,19 @@ public class RegistrationService {
             teacher.setName(name);
             userRepository.save(user);
             teacherRepository.save(teacher);
-            return "Teacher registered successfully";
+            ApiResponse<Void> apiResponse = new ApiResponse<Void>(true, Constants.TEACHER_REG_SUCCESSFULL.getMessage());
+            return apiResponse;
         } else if (Role.STUDENT.equals(role)) {
             Student student = new Student();
             student.setUser(user);
             student.setName(name);
             userRepository.save(user);
             studentService.save(student);
-            return "Student registered successfully";
+            ApiResponse<Void>  apiResponse = new ApiResponse<Void>(true, Constants.STUDENT_REG_SUCCESSFULL.getMessage());
+            return apiResponse;
         } else {
-            return "Invalid role selected";
+            ApiResponse<Void> apiResponse = new ApiResponse<Void>(false, Constants.INVALID_ROLE.getMessage());
+            return apiResponse;
         }
     }
 }

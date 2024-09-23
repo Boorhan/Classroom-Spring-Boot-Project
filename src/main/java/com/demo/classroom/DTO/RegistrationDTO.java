@@ -1,5 +1,6 @@
 package com.demo.classroom.DTO;
-import com.demo.classroom.Utility.Role;
+import com.demo.classroom.Utility.Constants.Role;
+import com.demo.classroom.Validation.ValidPassword;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -16,8 +17,7 @@ public class RegistrationDTO {
     @Email(message = "Email should be valid")
     private String email;
 
-    @NotBlank(message = "Password is mandatory")
-    @Size(min = 8, message = "Password must be at least 8 characters long")
+    @ValidPassword(message = "Password must be at least 8 characters long, contain an uppercase letter, a digit, and a special character")
     private String password;
 
     private Role role; 
