@@ -32,8 +32,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<?>> register(@Valid @RequestBody RegistrationDTO request, BindingResult result) {
 
         if (result.hasErrors()) {
-            var errors = ErrorMessages.constructErrorMessage(result);
-            System.out.println(errors);
+            Map<String, List<String>> errors = ErrorMessages.constructErrorMessage(result);
             ApiResponse<Map<String, List<String>>> errorResponse = new ApiResponse<>(false, Constants.VALIDATION_FAILED.getMessage(), errors);
             return ResponseEntity.badRequest().body(errorResponse);
         }

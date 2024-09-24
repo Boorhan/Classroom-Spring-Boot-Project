@@ -7,6 +7,7 @@ public enum Constants {
     INVALID_ROLE("Invalid role selected."),
     VALIDATION_FAILED("Validation failed."),
     TEACHER_REG_SUCCESSFULL("Teacher registered successfully"),
+    REGISTRATION_FAILED("An error occurred during registration."),
     STUDENT_REG_SUCCESSFULL("Student registered successfully");
 
     private final String message;
@@ -25,4 +26,17 @@ public enum Constants {
         STUDENT
     }
     
+    public enum PublicEndpoints {
+        SIGNUP("/signup");
+        
+        private final String path;
+    
+        PublicEndpoints(String path) {
+            this.path = path;
+        }
+    
+        public String getPath() {
+            return path;
+        }
+    }
 }

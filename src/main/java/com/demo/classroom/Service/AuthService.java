@@ -21,17 +21,22 @@ import jakarta.transaction.Transactional;
 @Service
 public class AuthService {
 
-    @Autowired
     private UserRepository userRepository;
 
-    @Autowired
     private TeacherRepository teacherRepository;
 
-    @Autowired
     private StudentRepository studentRepository;
 
-    @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    public AuthService(UserRepository userRepository, TeacherRepository teacherRepository, StudentRepository studentRepository, PasswordEncoder passwordEncoder){
+        this.userRepository=userRepository;
+        this.teacherRepository=teacherRepository;
+        this.studentRepository=studentRepository;
+        this.passwordEncoder=passwordEncoder;
+        
+    } 
 
     @Transactional
     public ApiResponse<Void> registerUser(RegistrationDTO request) {
@@ -45,38 +50,40 @@ public class AuthService {
             return apiResponse;
         }
 
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        String encodedPassword = passwordEncoder.encode(request.getPassword());
-        user.setPassword(encodedPassword);
+        try{
+            User user = new User();
+            user.setUsername(request.getUsername());
+            user.setEmail(request.getEmail());
+            String encodedPassword = passwordEncoder.encode(request.getPassword());
+            user.setPassword(encodedPassword);
+            Role role=Role.valueOf(request.getRole());
+            String name = request.getName();
 
-        Role role = request.getRole();
-        String name = request.getName();
-
-        if (Role.TEACHER.equals(role)) {
-            Teacher teacher = new Teacher();
-            teacher.setUser(user);
-            teacher.setName(name);
-            userRepository.save(user);
-            teacherRepository.save(teacher);
-            ApiResponse<Void> apiResponse = new ApiResponse<Void>(true, Constants.TEACHER_REG_SUCCESSFULL.getMessage());
-            return apiResponse;
-        } else if (Role.STUDENT.equals(role)) {
-            Student student = new Student();
-            student.setUser(user);
-            student.setName(name);
-            userRepository.save(user);
-            student.setRoll(generateRollNumber());
-            studentRepository.save(student);
-            ApiResponse<Void>  apiResponse = new ApiResponse<Void>(true, Constants.STUDENT_REG_SUCCESSFULL.getMessage());
-            return apiResponse;
-        } else {
+            if (Role.TEACHER.equals(role)) {
+                Teacher teacher = new Teacher();
+                teacher.setUser(user);
+                teacher.setName(name);
+                userRepository.save(user);
+                teacherRepository.save(teacher);
+                ApiResponse<Void> apiResponse = new ApiResponse<Void>(true, Constants.TEACHER_REG_SUCCESSFULL.getMessage());
+                return apiResponse;
+            } else if (Role.STUDENT.equals(role)) {
+                Student student = new Student();
+                student.setUser(user);
+                student.setName(name);
+                userRepository.save(user);
+                student.setRoll(generateRollNumber());
+                studentRepository.save(student);
+                ApiResponse<Void>  apiResponse = new ApiResponse<Void>(true, Constants.STUDENT_REG_SUCCESSFULL.getMessage());
+                return apiResponse;
+            } else {
+                ApiResponse<Void> apiResponse = new ApiResponse<Void>(false, Constants.INVALID_ROLE.getMessage());
+                return apiResponse;
+            }
+        }catch(IllegalArgumentException e){
             ApiResponse<Void> apiResponse = new ApiResponse<Void>(false, Constants.INVALID_ROLE.getMessage());
             return apiResponse;
         }
-
-        
     }
     private String generateRollNumber() {
         String prefix = "Sc10A";

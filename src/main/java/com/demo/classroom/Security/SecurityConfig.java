@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import com.demo.classroom.Utility.Constants.PublicEndpoints;
 
 @Configuration
 @EnableWebSecurity
@@ -17,7 +18,7 @@ public class SecurityConfig {
         return httpSecurity
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> {
-                    authorize.requestMatchers("/signup").permitAll();
+                    authorize.requestMatchers(PublicEndpoints.SIGNUP.getPath()).permitAll();
                     authorize.anyRequest().authenticated();
                 })
                 .formLogin(login -> login.disable())
