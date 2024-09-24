@@ -51,29 +51,20 @@ public class AuthService {
         }
 
         try{
-            User user = new User();
-            user.setUsername(request.getUsername());
-            user.setEmail(request.getEmail());
-            String encodedPassword = passwordEncoder.encode(request.getPassword());
-            user.setPassword(encodedPassword);
-            Role role=Role.valueOf(request.getRole());
+            if(!isValidRole(request.getRole())){
+                return new ApiResponse<Void>(false, Constants.INVALID_ROLE.getMessage());
+            }
+
+            User user = createUser(request);
+            Role role=Role.valueOf(request.getRole().toUpperCase());
             String name = request.getName();
 
             if (Role.TEACHER.equals(role)) {
-                Teacher teacher = new Teacher();
-                teacher.setUser(user);
-                teacher.setName(name);
-                userRepository.save(user);
-                teacherRepository.save(teacher);
+                registerTeacher(user, name);
                 ApiResponse<Void> apiResponse = new ApiResponse<Void>(true, Constants.TEACHER_REG_SUCCESSFULL.getMessage());
                 return apiResponse;
             } else if (Role.STUDENT.equals(role)) {
-                Student student = new Student();
-                student.setUser(user);
-                student.setName(name);
-                userRepository.save(user);
-                student.setRoll(generateRollNumber());
-                studentRepository.save(student);
+                registerStudent(user, name);
                 ApiResponse<Void>  apiResponse = new ApiResponse<Void>(true, Constants.STUDENT_REG_SUCCESSFULL.getMessage());
                 return apiResponse;
             } else {
@@ -85,23 +76,59 @@ public class AuthService {
             return apiResponse;
         }
     }
+
+    private User createUser(RegistrationDTO request) {
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        user.setPassword(encodedPassword);
+    
+        return user;
+    }
+
+    private void registerTeacher(User user, String name) {
+        Teacher teacher = new Teacher();
+        teacher.setUser(user);
+        teacher.setName(name);
+        userRepository.save(user);
+        teacherRepository.save(teacher);
+    }
+
+    private void registerStudent(User user, String name) {
+        Student student = new Student();
+        student.setUser(user);
+        student.setName(name);
+        student.setRoll(generateRollNumber());
+        userRepository.save(user);
+        studentRepository.save(student);
+    }
+
+    private boolean isValidRole(String role) {
+        for (Role r : Role.values()) {
+            if (r.name().equalsIgnoreCase(role)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private String generateRollNumber() {
         String prefix = "Sc10A";
         
-            Optional<Student> lastStudent = studentRepository.findFirstByOrderByRollDesc();
+        Optional<Student> lastStudent = studentRepository.findFirstByOrderByRollDesc();
         
-            int nextRollNumber = lastStudent.map(student -> {
-                String lastRollNumber = student.getRoll();
-                if (lastRollNumber == null || lastRollNumber.length() <= prefix.length()) {
-                    return 1;
-                }
-                String sequentialPart = lastRollNumber.substring(prefix.length());
-                return Integer.parseInt(sequentialPart) + 1; 
-            }).orElse(1); 
+        int nextRollNumber = lastStudent.map(student -> {
+            String lastRollNumber = student.getRoll();
+            if (lastRollNumber == null || lastRollNumber.length() <= prefix.length()){
+                return 1;
+            }
+            String sequentialPart = lastRollNumber.substring(prefix.length());
+            return Integer.parseInt(sequentialPart) + 1; 
+        }).orElse(1); 
         
-            
-            String formattedRollNumber = String.format("%03d", nextRollNumber);
-        
-            return prefix + formattedRollNumber;
+        String formattedRollNumber = prefix + String.format("%03d", nextRollNumber);
+
+        return formattedRollNumber;
     }
 }

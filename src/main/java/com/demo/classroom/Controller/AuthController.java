@@ -30,11 +30,18 @@ public class AuthController {
     }   
 
     @PostMapping(value = "/signup", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<ApiResponse<?>> register(@Valid @RequestBody RegistrationDTO request, BindingResult result) {
-
+    public ResponseEntity<ApiResponse<?>> register(
+        @Valid @RequestBody RegistrationDTO request, 
+        BindingResult result
+    ) {
+        
         if (result.hasErrors()) {
             Map<String, List<String>> errors = ErrorMessages.constructErrorMessage(result);
-            ApiResponse<Map<String, List<String>>> errorResponse = new ApiResponse<>(false, Constants.VALIDATION_FAILED.getMessage(), errors);
+            ApiResponse<Map<String, List<String>>> errorResponse = new ApiResponse<>(
+                false, 
+                Constants.VALIDATION_FAILED.getMessage(), 
+                errors
+            );
             return ResponseEntity.badRequest().body(errorResponse);
         }
 
