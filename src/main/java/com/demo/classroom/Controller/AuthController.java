@@ -34,9 +34,9 @@ public class AuthController {
         @Valid @RequestBody RegistrationDTO request, 
         BindingResult result
     ) {
-        
+
         if (result.hasErrors()) {
-            Map<String, List<String>> errors = ErrorMessages.constructErrorMessage(result);
+            Map<String, List<String>> errors = ErrorMessages.constructErrorMessages(result);
             ApiResponse<Map<String, List<String>>> errorResponse = new ApiResponse<>(
                 false, 
                 Constants.VALIDATION_FAILED.getMessage(), 

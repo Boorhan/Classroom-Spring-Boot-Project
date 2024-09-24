@@ -7,8 +7,8 @@ public enum Constants {
     INVALID_ROLE("Invalid role selected."),
     VALIDATION_FAILED("Validation failed."),
     TEACHER_REG_SUCCESSFULL("Teacher registered successfully"),
-    REGISTRATION_FAILED("An error occurred during registration."),
-    STUDENT_REG_SUCCESSFULL("Student registered successfully");
+    STUDENT_REG_SUCCESSFULL("Student registered successfully"),
+    REGISTRATION_FAILED("An error occurred during registration.");
 
     private final String message;
 
@@ -19,7 +19,6 @@ public enum Constants {
     public String getMessage() {
         return message;
     }
-
 
     public enum Role {
         TEACHER,

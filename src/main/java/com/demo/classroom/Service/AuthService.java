@@ -42,17 +42,15 @@ public class AuthService {
     public ApiResponse<Void> registerUser(RegistrationDTO request) {
         
         if (userRepository.existsByUsername(request.getUsername())) {
-            ApiResponse<Void> apiResponse = new ApiResponse<Void>(false, Constants.USERNAME_TAKEN.getMessage());
-            return apiResponse;
+            return createApiResponse(false, Constants.USERNAME_TAKEN.getMessage());
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            ApiResponse<Void> apiResponse = new ApiResponse<Void>(false, Constants.EMAIL_TAKEN.getMessage());
-            return apiResponse;
+            return createApiResponse(false, Constants.EMAIL_TAKEN.getMessage());;
         }
 
         try{
             if(!isValidRole(request.getRole())){
-                return new ApiResponse<Void>(false, Constants.INVALID_ROLE.getMessage());
+                return createApiResponse(false, Constants.INVALID_ROLE.getMessage());
             }
 
             User user = createUser(request);
@@ -61,20 +59,16 @@ public class AuthService {
 
             if (Role.TEACHER.equals(role)) {
                 registerTeacher(user, name);
-                ApiResponse<Void> apiResponse = new ApiResponse<Void>(true, Constants.TEACHER_REG_SUCCESSFULL.getMessage());
-                return apiResponse;
+                return createApiResponse(false, Constants.TEACHER_REG_SUCCESSFULL.getMessage());
             } else if (Role.STUDENT.equals(role)) {
                 registerStudent(user, name);
-                ApiResponse<Void>  apiResponse = new ApiResponse<Void>(true, Constants.STUDENT_REG_SUCCESSFULL.getMessage());
-                return apiResponse;
-            } else {
-                ApiResponse<Void> apiResponse = new ApiResponse<Void>(false, Constants.INVALID_ROLE.getMessage());
-                return apiResponse;
+                return createApiResponse(false, Constants.STUDENT_REG_SUCCESSFULL.getMessage());
             }
         }catch(IllegalArgumentException e){
-            ApiResponse<Void> apiResponse = new ApiResponse<Void>(false, Constants.INVALID_ROLE.getMessage());
-            return apiResponse;
+            return createApiResponse(false, Constants.INVALID_ROLE.getMessage());
         }
+
+        return createApiResponse(false, Constants.REGISTRATION_FAILED.getMessage());;
     }
 
     private User createUser(RegistrationDTO request) {
@@ -111,6 +105,11 @@ public class AuthService {
             }
         }
         return false;
+    }
+
+    private ApiResponse<Void> createApiResponse(boolean success, String message){
+        return new ApiResponse<Void>(success, message);
+
     }
 
     private String generateRollNumber() {

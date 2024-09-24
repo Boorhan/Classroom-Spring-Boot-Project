@@ -10,7 +10,7 @@ import org.springframework.validation.FieldError;
 
 public class ErrorMessages {
 
-    public static Map<String, List<String>> constructErrorMessage(BindingResult result) {
+    public static Map<String, List<String>> constructErrorMessages(BindingResult result) {
         return result.getFieldErrors().stream()
             .collect(Collectors.groupingBy(
                 FieldError::getField,
