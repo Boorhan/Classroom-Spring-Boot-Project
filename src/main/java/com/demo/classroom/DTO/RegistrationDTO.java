@@ -1,5 +1,4 @@
 package com.demo.classroom.DTO;
-import com.demo.classroom.Utility.Constants.Role;
 import com.demo.classroom.Validation.ValidPassword;
 
 import jakarta.validation.constraints.Email;
