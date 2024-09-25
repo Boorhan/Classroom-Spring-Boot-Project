@@ -1,12 +1,24 @@
 package com.demo.classroom.Service;
 import java.util.Optional;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.demo.classroom.Config.JwtService;
 import com.demo.classroom.DTO.ApiResponse;
+import com.demo.classroom.DTO.LoginDTO;
 import com.demo.classroom.DTO.RegistrationDTO;
 import com.demo.classroom.Entity.Student;
 import com.demo.classroom.Entity.Teacher;
@@ -30,13 +42,23 @@ public class AuthService {
 
     private PasswordEncoder passwordEncoder;
 
+    private AuthenticationManager authenticationManager;
+
     @Autowired
-    public AuthService(UserRepository userRepository, TeacherRepository teacherRepository, StudentRepository studentRepository, PasswordEncoder passwordEncoder){
+    private JwtService jwtService;
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    public AuthService(UserRepository userRepository, TeacherRepository teacherRepository, 
+        StudentRepository studentRepository, PasswordEncoder passwordEncoder,
+        AuthenticationManager authenticationManager
+    ){
         this.userRepository=userRepository;
         this.teacherRepository=teacherRepository;
         this.studentRepository=studentRepository;
         this.passwordEncoder=passwordEncoder;
-        
+        this.authenticationManager=authenticationManager;
     } 
 
     @Transactional
@@ -69,6 +91,39 @@ public class AuthService {
             return createApiResponse(false, Constants.INVALID_ROLE.getMessage());
         }
         return createApiResponse(false, Constants.REGISTRATION_FAILED.getMessage());
+    }
+    
+    @Transactional
+    public ApiResponse<?> loginUser(LoginDTO request) {
+        
+        boolean validUsername = userRepository.existsByUsername(request.getUsername());
+
+        if (!validUsername) {
+            
+            return createApiResponse(false, Constants.INVALID_USERNAME.getMessage());
+        }
+
+        Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+        );
+
+        var authUser = userService.loadUserByUsername(request.getUsername());
+
+        Map<String, String> jwtToken = Collections.singletonMap("Token", jwtService.generateToken(authUser));
+
+        boolean isTeacher = authentication.getAuthorities().stream()
+            .anyMatch(role -> role.getAuthority().equals("ROLE_TEACHER"));
+        boolean isStudent = authentication.getAuthorities().stream()
+            .anyMatch(role -> role.getAuthority().equals("ROLE_STUDENT"));
+
+        if (isTeacher) {
+            return new ApiResponse<>(true, Constants.TEACHER_LOGIN_SUCCESSFULL.getMessage(), jwtToken);
+        } else if (isStudent) {
+            return new ApiResponse<>(true, Constants.STUDENT_LOGIN_SUCCESSFULL.getMessage(), jwtToken);
+        
+        } 
+        
+        return createApiResponse(false, Constants.LOGIN_FAILED.getMessage());
     }
 
     private User createUser(RegistrationDTO request) {

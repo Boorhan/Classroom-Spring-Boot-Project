@@ -19,10 +19,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
-    // @Value("${security.jwt.secret-key}")
+    // @Value("${jwt.secret}")
     // private String SECRET_KEY;
 
-    // @Value("${security.jwt.expiration-time}")
+    // @Value("${jwt.expiration}")
     // private long JWT_EXPIRATION;
     
     private static final String SECRET_KEY= "3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b";

@@ -7,11 +7,15 @@ public enum Constants {
     EMAIL_TAKEN("Email is already taken."),
     
     TEACHER_REG_SUCCESSFULL("Teacher registered successfully"),
+    TEACHER_LOGIN_SUCCESSFULL("Teacher login successfull"),
     STUDENT_REG_SUCCESSFULL("Student registered successfully"),
+    STUDENT_LOGIN_SUCCESSFULL("Student login successfull"),
 
     INVALID_ROLE("Invalid role selected."),
+    INVALID_USERNAME("Invalid username selected"),
     VALIDATION_FAILED("Validation failed."),
     REGISTRATION_FAILED("An error occurred during registration."),
+    LOGIN_FAILED("An error occurred during login."),
     
     EMPTY_PASSWORD("Password cannot be empty"),
     UPPERCASE_REQUIRED("Password must contain at least one uppercase letter"),
