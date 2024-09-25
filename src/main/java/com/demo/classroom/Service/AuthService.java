@@ -109,7 +109,7 @@ public class AuthService {
 
         var authUser = userService.loadUserByUsername(request.getUsername());
 
-        Map<String, String> jwtToken = Collections.singletonMap("Token", jwtService.generateToken(authUser));
+        Map<String, String> jwtToken = Collections.singletonMap("access token", jwtService.generateToken(authUser));
 
         boolean isTeacher = authentication.getAuthorities().stream()
             .anyMatch(role -> role.getAuthority().equals("ROLE_TEACHER"));
