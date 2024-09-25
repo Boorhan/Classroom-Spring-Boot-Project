@@ -1,5 +1,6 @@
 package com.demo.classroom.Service;
 import java.util.Optional;
+import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,7 +46,7 @@ public class AuthService {
             return createApiResponse(false, Constants.USERNAME_TAKEN.getMessage());
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            return createApiResponse(false, Constants.EMAIL_TAKEN.getMessage());;
+            return createApiResponse(false, Constants.EMAIL_TAKEN.getMessage());
         }
 
         try{
@@ -59,16 +60,15 @@ public class AuthService {
 
             if (Role.TEACHER.equals(role)) {
                 registerTeacher(user, name);
-                return createApiResponse(false, Constants.TEACHER_REG_SUCCESSFULL.getMessage());
+                return createApiResponse(true, Constants.TEACHER_REG_SUCCESSFULL.getMessage());
             } else if (Role.STUDENT.equals(role)) {
                 registerStudent(user, name);
-                return createApiResponse(false, Constants.STUDENT_REG_SUCCESSFULL.getMessage());
+                return createApiResponse(true, Constants.STUDENT_REG_SUCCESSFULL.getMessage());
             }
         }catch(IllegalArgumentException e){
             return createApiResponse(false, Constants.INVALID_ROLE.getMessage());
         }
-
-        return createApiResponse(false, Constants.REGISTRATION_FAILED.getMessage());;
+        return createApiResponse(false, Constants.REGISTRATION_FAILED.getMessage());
     }
 
     private User createUser(RegistrationDTO request) {
@@ -99,17 +99,11 @@ public class AuthService {
     }
 
     private boolean isValidRole(String role) {
-        for (Role r : Role.values()) {
-            if (r.name().equalsIgnoreCase(role)) {
-                return true;
-            }
-        }
-        return false;
+        return Arrays.stream(Role.values()).anyMatch(r -> r.name().equalsIgnoreCase(role));
     }
 
     private ApiResponse<Void> createApiResponse(boolean success, String message){
         return new ApiResponse<Void>(success, message);
-
     }
 
     private String generateRollNumber() {

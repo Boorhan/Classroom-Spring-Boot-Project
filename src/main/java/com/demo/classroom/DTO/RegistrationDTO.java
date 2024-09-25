@@ -17,9 +17,7 @@ public class RegistrationDTO {
     @Email(message = "Email should be valid")
     private String email;
 
-    @ValidPassword(
-        message = "Password must be at least 8 characters long, contain an uppercase letter, a digit, and a special character"
-    )
+    @ValidPassword(message = "Password must meet the requirements")
     private String password;
 
     @NotBlank(message = "Role is mandatory")
