@@ -1,5 +1,7 @@
 package com.demo.classroom.Entity;
 
+import com.demo.classroom.Validation.ValidPassword;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,16 +27,15 @@ public class User {
 
     @NotBlank(message = "Username is mandatory")
     @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
-    @Column(nullable=false)
+    @Column(nullable=false, unique = true)
     private String username;
 
     @NotBlank(message = "Email is mandatory")
     @Email(message = "Email should be valid")
-    @Column(nullable=false)
+    @Column(nullable=false, unique = true)
     private String email;
 
-    @NotBlank(message = "Password is mandatory")
-    @Size(min = 8, message = "Password must be at least 8 characters long")
+    @ValidPassword(message = "Password must meet the requirements")
     @Column(nullable=false)
     private String password;
 }
