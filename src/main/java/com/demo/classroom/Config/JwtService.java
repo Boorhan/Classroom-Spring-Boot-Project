@@ -3,7 +3,6 @@ package com.demo.classroom.Config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
 import java.security.Key;
@@ -19,15 +18,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
-    // @Value("${jwt.secret}")
-    // private String SECRET_KEY;
-
-    // @Value("${jwt.expiration}")
-    // private long JWT_EXPIRATION;
+    @Value("${jwt.expiration:86400000}") 
+    private long JWT_EXPIRATION;
     
-    private static final String SECRET_KEY= "3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b";
-    private static final int JWT_EXPIRATION= 1000*60*60*24;
-
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -83,7 +76,6 @@ public class JwtService {
     }
 
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return Keys.secretKeyFor(SignatureAlgorithm.HS256);
     }
 }
