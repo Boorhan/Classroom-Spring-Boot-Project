@@ -37,7 +37,8 @@ public enum Constants {
     
     public enum PublicEndpoints {
 
-        SIGNUP("/signup");
+        SIGNUP("/signup"),
+        LOGIN("/login");;
         
         private final String path;
     

@@ -3,12 +3,13 @@ package com.demo.classroom.Controller;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindingResult;
@@ -30,12 +31,15 @@ import jakarta.validation.Valid;
 @RestController
 public class AuthController {
     private final AuthService authService;
-    @Autowired
-    private UserRepository userRepository;
+    
+    private final UserRepository userRepository;
+    
+    private AuthenticationManager authenticationManager;
 
-    @Autowired
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserRepository userRepository, AuthenticationManager authenticationManager) {
         this.authService = authService;
+        this.userRepository=userRepository;
+        this.authenticationManager=authenticationManager;
     }   
 
     @PostMapping(value = "/signup", consumes = "application/json", produces = "application/json")
@@ -61,6 +65,8 @@ public class AuthController {
             return ResponseEntity.badRequest().body(apiResponse);
         }
     }
+
+
     @PostMapping(value = "/login", consumes = "application/json")
     public ResponseEntity<String> login(@Valid @RequestBody LoginDTO loginDTO, BindingResult result) {
 
@@ -80,8 +86,6 @@ public class AuthController {
         }
 
         try {
-            
-
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginDTO.getUsername(), loginDTO.getPassword())
             );
