@@ -1,100 +1,66 @@
 package com.demo.classroom.Controller;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.demo.classroom.DTO.ApiResponse;
 import com.demo.classroom.DTO.LoginDTO;
 import com.demo.classroom.DTO.RegistrationDTO;
-import com.demo.classroom.Entity.Student;
-import com.demo.classroom.Entity.Teacher;
-import com.demo.classroom.Entity.User;
-import com.demo.classroom.Repository.TeacherRepository;
 import com.demo.classroom.Repository.UserRepository;
-import com.demo.classroom.Service.StudentService;
+import com.demo.classroom.Service.AuthService;
+import com.demo.classroom.Utility.Constants;
+import com.demo.classroom.Utility.ErrorMessages;
 
 import jakarta.validation.Valid;
 
+
 @RestController
-@RequestMapping("/req")
 public class AuthController {
+    private final AuthService authService;
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private TeacherRepository teacherRepository;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }   
 
-    @Autowired
-    private StudentService studentService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder; 
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @PostMapping(value = "/signup", consumes = "application/json")
-    public ResponseEntity<String> registerUser(@Valid @RequestBody RegistrationDTO request, BindingResult result) {
+    @PostMapping(value = "/signup", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ApiResponse<?>> register(
+        @Valid @RequestBody RegistrationDTO request, 
+        BindingResult result
+    ) {
 
         if (result.hasErrors()) {
-            StringBuilder errorMessage = new StringBuilder("Validation failed: ");
-            result.getFieldErrors().forEach(error -> {
-                errorMessage.append("Field '").append(error.getField()).append("' - ")
-                            .append(error.getDefaultMessage()).append(". ");
-            });
-            return ResponseEntity.badRequest().body(errorMessage.toString());
+            Map<String, List<String>> errors = ErrorMessages.constructErrorMessages(result);
+            ApiResponse<Map<String, List<String>>> errorResponse = new ApiResponse<>(
+                false, 
+                Constants.VALIDATION_FAILED.getMessage(), 
+                errors
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
-
-        if (userRepository.existsByUsername(request.getUsername())) {
-            return ResponseEntity.badRequest().body("Username is already taken");
-        }
-        if (userRepository.existsByEmail(request.getEmail())) {
-            return ResponseEntity.badRequest().body("Email is already in use");
-        }
-
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-
-        String encodedPassword = passwordEncoder.encode(request.getPassword());
-        user.setPassword(encodedPassword);
-
-        String role = request.getRole();
-        String name = request.getName();
-
-        if ("teacher".equalsIgnoreCase(role)) {
-            Teacher teacher = new Teacher();
-            teacher.setUser(user);
-            teacher.setName(name);
-            userRepository.save(user);
-            teacherRepository.save(teacher);
-            return ResponseEntity.ok("Teacher registered successfully");
-        } else if ("student".equalsIgnoreCase(role)) {
-            Student student = new Student();
-            student.setUser(user); 
-            student.setName(name);
-            userRepository.save(user);
-            studentService.save(student);
-            return ResponseEntity.ok("Student registered successfully");
+        ApiResponse<Void> apiResponse = authService.registerUser(request);
+        if (apiResponse.isSuccess()) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
         } else {
-            return ResponseEntity.badRequest().body("Invalid role selected");
+            return ResponseEntity.badRequest().body(apiResponse);
         }
     }
-
     @PostMapping(value = "/login", consumes = "application/json")
     public ResponseEntity<String> login(@Valid @RequestBody LoginDTO loginDTO, BindingResult result) {
 
