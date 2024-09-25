@@ -32,50 +32,50 @@ public @interface ValidPassword {
         private static final Pattern DIGIT_PATTERN = Pattern.compile(".*[0-9].*");
         private static final Pattern SPECIAL_CHAR_PATTERN = Pattern.compile(".*[@#$%^&+=!].*");
         private static final Pattern LENGTH_PATTERN = Pattern.compile(".{8,}");
-
+    
         @Override
         public void initialize(ValidPassword constraintAnnotation) {
         }
-
+    
         @Override
         public boolean isValid(String password, ConstraintValidatorContext context) {
-
             List<String> messages = new ArrayList<>(); 
-
+    
             if (password == null || password.trim().isEmpty()) {
                 messages.add(Constants.EMPTY_PASSWORD.getMessage());
+            } else {
+                ValidationRule[] rules = {
+                    new ValidationRule(LENGTH_PATTERN, Constants.LENGTH_REQUIRED.getMessage()),
+                    new ValidationRule(UPPERCASE_PATTERN, Constants.UPPERCASE_REQUIRED.getMessage()),
+                    new ValidationRule(LOWERCASE_PATTERN, Constants.LOWERCASE_REQUIRED.getMessage()),
+                    new ValidationRule(DIGIT_PATTERN, Constants.DIGIT_REQUIRED.getMessage()),
+                    new ValidationRule(SPECIAL_CHAR_PATTERN, Constants.SPECIAL_CHAR_REQUIRED.getMessage())
+                };
+                for (ValidationRule rule : rules) {
+                    if (!rule.pattern.matcher(password).matches()) {
+                        messages.add(rule.message);
+                    }
+                }
             }
-
-            if (!LENGTH_PATTERN.matcher(password).matches()) {
-                messages.add(Constants.LENGTH_REQUIRED.getMessage());
-            }
-
-            if (!UPPERCASE_PATTERN.matcher(password).matches()) {
-                messages.add(Constants.UPPERCASE_REQUIRED.getMessage());
-            }
-
-            if (!LOWERCASE_PATTERN.matcher(password).matches()) {
-                messages.add(Constants.LOWERCASE_REQUIRED.getMessage());
-            }
-
-            if (!DIGIT_PATTERN.matcher(password).matches()) {
-                messages.add(Constants.DIGIT_REQUIRED.getMessage());
-            }
-
-            if (!SPECIAL_CHAR_PATTERN.matcher(password).matches()) {
-                messages.add(Constants.SPECIAL_CHAR_REQUIRED.getMessage());
-            }
-
+    
             if (!messages.isEmpty()) {
-
-                context.disableDefaultConstraintViolation(); 
-            
+                context.disableDefaultConstraintViolation();
                 for (String message : messages) {
                     context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                 }
                 return false; 
             }
-            return true;
+    
+            return true; 
+        }
+        private static class ValidationRule {
+            private final Pattern pattern;
+            private final String message;
+    
+            public ValidationRule(Pattern pattern, String message) {
+                this.pattern = pattern;
+                this.message = message;
+            }
         }
     }
 }
