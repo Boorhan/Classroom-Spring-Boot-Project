@@ -1,7 +1,7 @@
 package com.demo.classroom.Service;
 import java.util.Optional;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,20 +113,21 @@ public class AuthService {
         var teacher = teacherRepository.findByUserId(userId);
         var student = studentRepository.findByUserId(userId);
 
-        
-
         boolean isTeacher = authentication.getAuthorities().stream()
             .anyMatch(role -> role.getAuthority().equals("ROLE_TEACHER"));
         boolean isStudent = authentication.getAuthorities().stream()
             .anyMatch(role -> role.getAuthority().equals("ROLE_STUDENT"));
-
+            
         if (isTeacher) {
-            Map<String, String> jwtToken = Collections.singletonMap("accessToken", jwtService.generateToken(authUser, teacher.get().getId()));
+            Map<String, String> jwtToken = new HashMap<>();
+            jwtToken.put("accessToken", jwtService.generateToken(authUser, teacher.get().getId()));
+            jwtToken.put("refreshToken", jwtService.generateRefreshToken(authUser));
             return new ApiResponse<>(true, Constants.TEACHER_LOGIN_SUCCESSFULL.getMessage(), jwtToken);
         } else if (isStudent) {
-            Map<String, String> jwtToken = Collections.singletonMap("accessToken", jwtService.generateToken(authUser, student.get().getId()));
+            Map<String, String> jwtToken = new HashMap<>();
+            jwtToken.put("accessToken", jwtService.generateToken(authUser, student.get().getId()));
+            jwtToken.put("refreshToken", jwtService.generateRefreshToken(authUser));
             return new ApiResponse<>(true, Constants.STUDENT_LOGIN_SUCCESSFULL.getMessage(), jwtToken);
-        
         } 
         
         return createApiResponse(false, Constants.LOGIN_FAILED.getMessage());
@@ -196,7 +197,5 @@ public class AuthService {
         }
 
         return jwtService.generateToken(userDetails);
-    }
-
-    
+    }  
 }

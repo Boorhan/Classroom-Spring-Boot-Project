@@ -81,6 +81,8 @@ public class JwtService {
         return generateToken(claims, userDetails);
     }
 
+    
+
     public String refreshAccessToken(String refreshToken, UserDetails userDetails) {
         if (isTokenValid(refreshToken, userDetails)) {
             return generateToken(userDetails);
@@ -88,7 +90,7 @@ public class JwtService {
         return null;
     }
 
-    public String generateRefreshToken(String username, UserDetails userDetails) {
+    public String generateRefreshToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         return buildToken(claims, userDetails, REFRESH_EXPIRATION_TIME);
     }

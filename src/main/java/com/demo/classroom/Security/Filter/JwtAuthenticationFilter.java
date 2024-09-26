@@ -81,13 +81,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                     String newAccessToken = jwtService.refreshAccessToken(refreshToken, userDetails);
                     if (newAccessToken != null) {
                         response.setHeader("Authorization", "Bearer " + newAccessToken);
+                        response.setHeader("Refresh-Token", refreshToken);
                     } else {
                         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Refresh token is invalid or expired");
                         return; 
                     }
                 }
             }
-
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
