@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -184,4 +185,18 @@ public class AuthService {
 
         return formattedRollNumber;
     }
+
+    public String refreshAccessToken(String refreshToken) {
+    
+        String username = jwtService.extractUsername(refreshToken); 
+        UserDetails userDetails = userService.loadUserByUsername(username);
+
+        if (refreshToken == null || !jwtService.isTokenValid(refreshToken, userDetails)) {
+            return null; 
+        }
+
+        return jwtService.generateToken(userDetails);
+    }
+
+    
 }

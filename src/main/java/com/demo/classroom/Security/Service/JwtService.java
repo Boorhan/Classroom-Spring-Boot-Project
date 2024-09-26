@@ -25,11 +25,13 @@ public class JwtService {
 
     private final String SECRET_KEY;
     private final long JWT_EXPIRATION;
+    private final long REFRESH_EXPIRATION_TIME;
 
     @Autowired
     public JwtService(Environment env) {
         this.SECRET_KEY = env.getProperty("JWT_SECRET_KEY");
         this.JWT_EXPIRATION = Long.parseLong(env.getProperty("JWT_EXPIRATION")); 
+        this.REFRESH_EXPIRATION_TIME=Long.parseLong(env.getProperty("REFRESH_EXPIRATION_TIME"));
     }
     
     public String extractUsername(String token) {
@@ -60,6 +62,14 @@ public class JwtService {
                 .getBody();
     }
 
+    public String generateToken(UserDetails userDetails){
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", userDetails.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .collect(Collectors.toList()));
+        return generateToken(claims, userDetails);
+    }
+
     public String generateToken(UserDetails userDetails, Long userID ){
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", userDetails.getAuthorities().stream()
@@ -69,6 +79,18 @@ public class JwtService {
         claims.put("userId", userID);
 
         return generateToken(claims, userDetails);
+    }
+
+    public String refreshAccessToken(String refreshToken, UserDetails userDetails) {
+        if (isTokenValid(refreshToken, userDetails)) {
+            return generateToken(userDetails);
+        }
+        return null;
+    }
+
+    public String generateRefreshToken(String username, UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        return buildToken(claims, userDetails, REFRESH_EXPIRATION_TIME);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {

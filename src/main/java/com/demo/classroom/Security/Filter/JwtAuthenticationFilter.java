@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,7 +15,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import com.demo.classroom.Security.Service.JwtService;
 
@@ -31,25 +29,23 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter{
 
-    @Autowired
-    private HandlerExceptionResolver handlerExceptionResolver;
-
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     
 
     @Override
     protected void doFilterInternal(
-        @NotNull HttpServletRequest request, 
-        @NotNull HttpServletResponse response,
-        @NotNull FilterChain filterChain
-        )throws ServletException, IOException {
+            @NotNull HttpServletRequest request,
+            @NotNull HttpServletResponse response,
+            @NotNull FilterChain filterChain
+    ) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
+        final String refreshToken = request.getHeader("Refresh-Token");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
-                return;
+            return;
         }
 
         try {
@@ -57,15 +53,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
             final String userName = jwtService.extractUsername(jwt);
 
             var roles = jwtService.extractRoles(jwt);
-            var userId =jwtService.extractUserId(jwt);
+            var userId = jwtService.extractUserId(jwt);
 
             if (roles == null) {
-                roles = Collections.emptyList(); 
+                roles = Collections.emptyList();
             }
 
             Collection<GrantedAuthority> authorities = roles.stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -81,12 +77,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else if (refreshToken != null) {
+                    String newAccessToken = jwtService.refreshAccessToken(refreshToken, userDetails);
+                    if (newAccessToken != null) {
+                        response.setHeader("Authorization", "Bearer " + newAccessToken);
+                    } else {
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Refresh token is invalid or expired");
+                        return; 
+                    }
                 }
             }
+
             filterChain.doFilter(request, response);
         } catch (Exception exception) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
         }
     }
-    
+  
 }

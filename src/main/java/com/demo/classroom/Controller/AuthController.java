@@ -1,35 +1,35 @@
 package com.demo.classroom.Controller;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.demo.classroom.DTO.ApiResponse;
 import com.demo.classroom.DTO.LoginDTO;
 import com.demo.classroom.DTO.RegistrationDTO;
+import com.demo.classroom.Security.Service.JwtService;
 import com.demo.classroom.Service.AuthService;
 import com.demo.classroom.Utility.Constants;
 import com.demo.classroom.Utility.ErrorMessages;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 
 
 @RestController
+@RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
-
-    @Autowired
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }   
+    private final JwtService jwtService;
 
     @PostMapping(value = "/signup", consumes = "application/json", produces = "application/json")
     public ResponseEntity<ApiResponse<?>> register(
@@ -77,5 +77,18 @@ public class AuthController {
             return ResponseEntity.badRequest().body(apiResponse);
         }
     
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<ApiResponse<?>> refreshToken(@RequestHeader("Refresh-Token") String refreshToken) {
+        String newAccessToken = authService.refreshAccessToken(refreshToken);
+
+        
+        if (newAccessToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>(false, "Failed to generate token", null));
+        }
+        Map<String, String> jwtToken = Collections.singletonMap("accessToken", newAccessToken);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, "Token Generate Successfull", jwtToken));
     }
 }
