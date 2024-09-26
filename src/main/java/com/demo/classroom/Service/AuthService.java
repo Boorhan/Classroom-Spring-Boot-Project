@@ -5,18 +5,13 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.demo.classroom.Config.JwtService;
 import com.demo.classroom.DTO.ApiResponse;
 import com.demo.classroom.DTO.LoginDTO;
 import com.demo.classroom.DTO.RegistrationDTO;
@@ -26,6 +21,7 @@ import com.demo.classroom.Entity.User;
 import com.demo.classroom.Repository.StudentRepository;
 import com.demo.classroom.Repository.TeacherRepository;
 import com.demo.classroom.Repository.UserRepository;
+import com.demo.classroom.Security.Service.JwtService;
 import com.demo.classroom.Utility.Constants;
 import com.demo.classroom.Utility.Constants.Role;
 
@@ -109,7 +105,14 @@ public class AuthService {
 
         var authUser = userService.loadUserByUsername(request.getUsername());
 
-        Map<String, String> jwtToken = Collections.singletonMap("access token", jwtService.generateToken(authUser));
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new UsernameNotFoundException("Invalid username"));
+
+        var userId = user.getId();
+        var teacher = teacherRepository.findByUserId(userId);
+        var student = studentRepository.findByUserId(userId);
+
+        
 
         boolean isTeacher = authentication.getAuthorities().stream()
             .anyMatch(role -> role.getAuthority().equals("ROLE_TEACHER"));
@@ -117,8 +120,10 @@ public class AuthService {
             .anyMatch(role -> role.getAuthority().equals("ROLE_STUDENT"));
 
         if (isTeacher) {
+            Map<String, String> jwtToken = Collections.singletonMap("accessToken", jwtService.generateToken(authUser, teacher.get().getId()));
             return new ApiResponse<>(true, Constants.TEACHER_LOGIN_SUCCESSFULL.getMessage(), jwtToken);
         } else if (isStudent) {
+            Map<String, String> jwtToken = Collections.singletonMap("accessToken", jwtService.generateToken(authUser, student.get().getId()));
             return new ApiResponse<>(true, Constants.STUDENT_LOGIN_SUCCESSFULL.getMessage(), jwtToken);
         
         } 

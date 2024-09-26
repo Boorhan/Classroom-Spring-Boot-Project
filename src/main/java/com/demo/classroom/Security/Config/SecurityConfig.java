@@ -1,4 +1,4 @@
-package com.demo.classroom.Config;
+package com.demo.classroom.Security.Config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +13,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 
+import com.demo.classroom.Security.Filter.JwtAuthenticationFilter;
 import com.demo.classroom.Utility.Constants.PublicEndpoints;
 
 import lombok.RequiredArgsConstructor;
