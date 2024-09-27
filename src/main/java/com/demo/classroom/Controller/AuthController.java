@@ -1,8 +1,8 @@
 package com.demo.classroom.Controller;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +22,6 @@ import com.demo.classroom.Utility.ErrorMessages;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
-
 
 @RestController
 @RequiredArgsConstructor
@@ -72,23 +70,24 @@ public class AuthController {
         ApiResponse<?> apiResponse = authService.loginUser(request);
 
         if (apiResponse.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
-        } else {
-            return ResponseEntity.badRequest().body(apiResponse);
+            return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
         }
-    
+
+        return ResponseEntity.badRequest().body(apiResponse);
+        
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<ApiResponse<?>> refreshToken(@RequestHeader("Refresh-Token") String refreshToken) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> refreshToken(@RequestHeader("Refresh-Token") String refreshToken) {
         String newAccessToken = authService.refreshAccessToken(refreshToken);
 
-        
-        if (newAccessToken == null) {
+        if (newAccessToken == null && !jwtService.isTokenExpired(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiResponse<>(false, "Failed to generate token", null));
         }
-        Map<String, String> jwtToken = Collections.singletonMap("accessToken", newAccessToken);
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, "Token Generate Successfull", jwtToken));
+        Map<String, String> jwtToken = new HashMap<>();
+        jwtToken.put("accessToken", newAccessToken);
+        jwtToken.put("refreshToken", refreshToken);
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(true, "Token Generate Successfull", jwtToken));
     }
 }

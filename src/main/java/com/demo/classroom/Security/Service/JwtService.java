@@ -30,8 +30,8 @@ public class JwtService {
     @Autowired
     public JwtService(Environment env) {
         this.SECRET_KEY = env.getProperty("JWT_SECRET_KEY");
-        this.JWT_EXPIRATION = Long.parseLong(env.getProperty("JWT_EXPIRATION")); 
-        this.REFRESH_EXPIRATION_TIME=Long.parseLong(env.getProperty("REFRESH_EXPIRATION_TIME"));
+        this.JWT_EXPIRATION = 900000; 
+        this.REFRESH_EXPIRATION_TIME=3600000;
     }
     
     public String extractUsername(String token) {
@@ -119,7 +119,7 @@ public class JwtService {
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
