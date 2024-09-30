@@ -10,14 +10,20 @@ import java.security.Key;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import java.util.*;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Date;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import com.demo.classroom.Utility.Constants.Expiration;
+import com.demo.classroom.Utility.Constants.ExpirationTime;;
 
 @Service
 public class JwtService {
@@ -32,8 +38,8 @@ public class JwtService {
     @Autowired
     public JwtService(Environment env) {
         this.JWT_SECRET_KEY = env.getProperty("JWT_SECRET_KEY");
-        this.ACCESS_TOKEN_EXPIRATION_TIME = Expiration.ACCESS_TOKEN_EXPIRATION_TIME.getValue(); 
-        this.REFRESH_TOKEN_EXPIRATION_TIME= Expiration.REFRESH_TOKEN_EXPIRATION_TIME.getValue();
+        this.ACCESS_TOKEN_EXPIRATION_TIME = ExpirationTime.ACCESS_TOKEN.getValue(); 
+        this.REFRESH_TOKEN_EXPIRATION_TIME= ExpirationTime.REFRESH_TOKEN.getValue();
     }
     
     public String extractUsername(String token) {
@@ -73,7 +79,7 @@ public class JwtService {
         if (userID.length > 0 && userID[0] != null) {
             claims.put("userId", userID[0]);
         }
-        return generateToken(claims, userDetails);
+        return buildToken(claims, userDetails, ACCESS_TOKEN_EXPIRATION_TIME);
     }
 
     public String rotateRefreshToken(String refreshToken, UserDetails userDetails) {
@@ -101,10 +107,6 @@ public class JwtService {
     public String generateRefreshToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         return buildToken(claims, userDetails, REFRESH_TOKEN_EXPIRATION_TIME);
-    }
-
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return buildToken(extraClaims, userDetails, ACCESS_TOKEN_EXPIRATION_TIME);
     }
 
     private String buildToken(

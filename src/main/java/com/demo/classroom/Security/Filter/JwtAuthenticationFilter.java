@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import java.util.List;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -68,55 +69,55 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
             }
             final String userName = jwtService.extractUsername(jwt);
 
-            var roles = jwtService.extractRoles(jwt);
-            var userId = jwtService.extractUserId(jwt);
-
+            List<String> role = jwtService.extractRoles(jwt);
+            
             SecurityContext securityContext = SecurityContextHolder.getContext();
 
-            if (roles == null) {
-                roles = Collections.emptyList();
+            if (role == null) {
+                role = Collections.emptyList();
             }
 
-            Collection<GrantedAuthority> authorities = roles.stream()
+            Collection<GrantedAuthority> authorities = role.stream()
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toList());
 
-            Authentication authentication = securityContext.getAuthentication();
+            if(userName != null){
+                Authentication authentication = securityContext.getAuthentication();
+                if (!userName.equals(authentication.getName())) {
+                    UserDetails userDetails = this.userDetailsService.loadUserByUsername(userName);
 
-            if (userName != null && (authentication == null || !authentication.getName().equals(userName))) {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userName);
+                    if (jwtService.isTokenValid(jwt, userDetails)) {
 
-                if (jwtService.isTokenValid(jwt, userDetails)) {
+                        var JwtAuthenticationToken= new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                authorities
+                        );
 
-                    var JwtAuthenticationToken= new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            authorities
-                    );
-
-                    JwtAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    securityContext.setAuthentication(JwtAuthenticationToken);
-                } else {
-                    Optional.ofNullable(refreshToken).ifPresentOrElse(token -> {
-                        String newAccessToken = jwtService.refreshAccessToken(token, userDetails);
-                        if (newAccessToken != null && !newAccessToken.isEmpty()) {
-                            String rotatedRefreshToken = jwtService.rotateRefreshToken(refreshToken, userDetails);
-                            response.setHeader(Constants.AUTH_HEADER, Constants.BEARER_PREFIX + newAccessToken);
-                            response.setHeader(Constants.REFRESH_TOKEN_HEADER, rotatedRefreshToken);
-                        } else {
+                        JwtAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        securityContext.setAuthentication(JwtAuthenticationToken);
+                    } else {
+                        Optional.ofNullable(refreshToken).ifPresentOrElse(token -> {
+                            String newAccessToken = jwtService.refreshAccessToken(token, userDetails);
+                            if (newAccessToken != null && !newAccessToken.isEmpty()) {
+                                String rotatedRefreshToken = jwtService.rotateRefreshToken(refreshToken, userDetails);
+                                response.setHeader(Constants.AUTH_HEADER, Constants.BEARER_PREFIX + newAccessToken);
+                                response.setHeader(Constants.REFRESH_TOKEN_HEADER, rotatedRefreshToken);
+                            } else {
+                                try {
+                                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, Constants.REFRESH_TOKEN_INVALID.getMessage());
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }, () -> {
                             try {
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, Constants.REFRESH_TOKEN_INVALID.getMessage());
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, Constants.REFRESH_TOKEN_REQUIRED.getMessage());
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
-                        }
-                    }, () -> {
-                        try {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, Constants.REFRESH_TOKEN_REQUIRED.getMessage());
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
+                        });
+                    }
                 }
             }
             filterChain.doFilter(request, response);

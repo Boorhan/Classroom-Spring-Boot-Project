@@ -27,40 +27,27 @@ import com.demo.classroom.Utility.Constants;
 import com.demo.classroom.Utility.Constants.Role;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    private TeacherRepository teacherRepository;
+    private final TeacherRepository teacherRepository;
 
-    private StudentRepository studentRepository;
+    private final StudentRepository studentRepository;
 
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
 
-    private JwtService jwtService;
+    private final JwtService jwtService;
 
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    public AuthService(
-        UserRepository userRepository, UserService userService, JwtService jwtService,
-        TeacherRepository teacherRepository, StudentRepository studentRepository, 
-        PasswordEncoder passwordEncoder,
-        AuthenticationManager authenticationManager
-    ){
-        this.userRepository=userRepository;
-        this.teacherRepository=teacherRepository;
-        this.studentRepository=studentRepository;
-        this.passwordEncoder=passwordEncoder;
-        this.authenticationManager=authenticationManager;
-        this.jwtService=jwtService;
-        this.userService=userService;
-    } 
-
+    
     @Transactional
     public ApiResponse<Void> registerUser(RegistrationDTO request) {
         
@@ -96,15 +83,17 @@ public class AuthService {
     @Transactional
     public ApiResponse<?> loginUser(LoginDTO request) {
 
-        if (!isUsernameValid(request.getUsername())) {
+        String userName = request.getUsername();
+
+        if (!isUsernameValid(userName)) {
             return createApiResponse(false, Constants.INVALID_USERNAME.getMessage());
         }
 
         Authentication authentication = authenticateUser(request);
 
-        UserDetails authUser = userService.loadUserByUsername(request.getUsername());
+        UserDetails authUser = userService.loadUserByUsername(userName);
 
-        User user = getUserByUsername(request.getUsername());
+        User user = getUserByUsername(userName);
 
         Optional<Teacher> teacher = getTeacherByUserId(user.getId());
         Optional<Student> student = getStudentByUserId(user.getId());
@@ -221,10 +210,14 @@ public class AuthService {
 
     public String refreshAccessToken(String refreshToken) {
     
+        if (refreshToken == null){
+            return null;
+        }
+
         String username = jwtService.extractUsername(refreshToken); 
         UserDetails userDetails = userService.loadUserByUsername(username);
 
-        if (refreshToken == null || !jwtService.isTokenValid(refreshToken, userDetails)) {
+        if (!jwtService.isTokenValid(refreshToken, userDetails)) {
             return null; 
         }
 

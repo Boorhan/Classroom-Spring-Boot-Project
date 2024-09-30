@@ -54,12 +54,12 @@ public enum Constants {
         STUDENT
     }
 
-    public enum Expiration {
-        ACCESS_TOKEN_EXPIRATION_TIME(900000L),
-        REFRESH_TOKEN_EXPIRATION_TIME(86400000L);
+    public enum ExpirationTime {
+        ACCESS_TOKEN(900000L),
+        REFRESH_TOKEN(86400000L);
 
         private final long value;
-        Expiration(long value) {
+        ExpirationTime(long value) {
             this.value = value;
         }
         public long getValue() {
