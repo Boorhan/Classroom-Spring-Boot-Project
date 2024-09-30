@@ -1,5 +1,6 @@
 package com.demo.classroom.Service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -18,6 +19,7 @@ public class UserService implements UserDetailsService {
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
 
+    @Autowired
     public UserService(UserRepository userRepository, TeacherRepository teacherRepository, StudentRepository studentRepository) {
         this.userRepository = userRepository;
         this.teacherRepository = teacherRepository;

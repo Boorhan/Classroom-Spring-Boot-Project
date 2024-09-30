@@ -4,25 +4,39 @@ import java.util.Arrays;
 public enum Constants {
 
     USERNAME_TAKEN("Username is already taken."),
+    USER_NOT_FOUND("User not found."),
     EMAIL_TAKEN("Email is already taken."),
-    
-    TEACHER_REG_SUCCESSFULL("Teacher registered successfully"),
-    TEACHER_LOGIN_SUCCESSFULL("Teacher login successful"),
-    STUDENT_REG_SUCCESSFULL("Student registered successfully"),
-    STUDENT_LOGIN_SUCCESSFULL("Student login successful"),
+
+    TEACHER_REG_SUCCESSFUL("Teacher registered successfully"),
+    TEACHER_LOGIN_SUCCESSFUL("Teacher login successful"),
+    STUDENT_REG_SUCCESSFUL("Student registered successfully"),
+    STUDENT_LOGIN_SUCCESSFUL("Student login successful"),
 
     INVALID_ROLE("Invalid role selected."),
     INVALID_USERNAME("Invalid username selected"),
     VALIDATION_FAILED("Validation failed."),
     REGISTRATION_FAILED("An error occurred during registration."),
     LOGIN_FAILED("An error occurred during login."),
-    
+
     EMPTY_PASSWORD("Password cannot be empty"),
     UPPERCASE_REQUIRED("Password must contain at least one uppercase letter"),
     LOWERCASE_REQUIRED("Password must contain at least one lowercase letter"),
     DIGIT_REQUIRED("Password must contain at least one digit"),
     SPECIAL_CHAR_REQUIRED("Password must contain at least one special character"),
-    LENGTH_REQUIRED("Password must be at least 8 characters long");
+    LENGTH_REQUIRED("Password must be at least 8 characters long"),
+
+    INVALID_TOKEN_FORMAT("Invalid token format."),
+    TOKEN_EXPIRED("Token has expired."),
+    UNSUPPORTED_TOKEN("Unsupported token."),
+    AUTHENTICATION_FAILED("Authentication failed."), 
+    REFRESH_TOKEN_INVALID("Refresh token is invalid or expired"), 
+    REFRESH_TOKEN_REQUIRED( "Refresh token is required"),
+    
+    INTERNAL_SERVER_ERROR("An error occurred while processing the request");
+
+    public static final String AUTH_HEADER = "Authorization";
+    public static final String BEARER_PREFIX = "Bearer ";
+    public static final String REFRESH_TOKEN_HEADER = "Refresh-Token";
 
     private final String message;
 
@@ -37,6 +51,19 @@ public enum Constants {
     public enum Role {
         TEACHER,
         STUDENT
+    }
+
+    public enum Expiration {
+        ACCESS_TOKEN_EXPIRATION_TIME(900000L),
+        REFRESH_TOKEN_EXPIRATION_TIME(86400000L);
+
+        private final long value;
+        Expiration(long value) {
+            this.value = value;
+        }
+        public long getValue() {
+            return value;
+        }
     }
     
     public enum PublicEndpoints {

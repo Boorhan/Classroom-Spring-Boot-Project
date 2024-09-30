@@ -1,5 +1,6 @@
 package com.demo.classroom.Service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +18,7 @@ public class MyUserDetails implements UserDetails {
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
 
+    @Autowired
     public MyUserDetails(User user, TeacherRepository teacherRepository, StudentRepository studentRepository) {
         this.user = user;
         this.teacherRepository = teacherRepository;

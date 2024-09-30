@@ -41,14 +41,15 @@ public class AuthService {
 
     private AuthenticationManager authenticationManager;
 
-    @Autowired
     private JwtService jwtService;
-    @Autowired
+
     private UserService userService;
 
     @Autowired
-    public AuthService(UserRepository userRepository, TeacherRepository teacherRepository, 
-        StudentRepository studentRepository, PasswordEncoder passwordEncoder,
+    public AuthService(
+        UserRepository userRepository, UserService userService, JwtService jwtService,
+        TeacherRepository teacherRepository, StudentRepository studentRepository, 
+        PasswordEncoder passwordEncoder,
         AuthenticationManager authenticationManager
     ){
         this.userRepository=userRepository;
@@ -56,6 +57,8 @@ public class AuthService {
         this.studentRepository=studentRepository;
         this.passwordEncoder=passwordEncoder;
         this.authenticationManager=authenticationManager;
+        this.jwtService=jwtService;
+        this.userService=userService;
     } 
 
     @Transactional
@@ -79,10 +82,10 @@ public class AuthService {
 
             if (Role.TEACHER.equals(role)) {
                 registerTeacher(user, name);
-                return createApiResponse(true, Constants.TEACHER_REG_SUCCESSFULL.getMessage());
+                return createApiResponse(true, Constants.TEACHER_REG_SUCCESSFUL.getMessage());
             } else if (Role.STUDENT.equals(role)) {
                 registerStudent(user, name);
-                return createApiResponse(true, Constants.STUDENT_REG_SUCCESSFULL.getMessage());
+                return createApiResponse(true, Constants.STUDENT_REG_SUCCESSFUL.getMessage());
             }
         }catch(IllegalArgumentException e){
             return createApiResponse(false, Constants.INVALID_ROLE.getMessage());
@@ -92,45 +95,74 @@ public class AuthService {
     
     @Transactional
     public ApiResponse<?> loginUser(LoginDTO request) {
-        
-        boolean validUsername = userRepository.existsByUsername(request.getUsername());
 
-        if (!validUsername) {
-            
+        if (!isUsernameValid(request.getUsername())) {
             return createApiResponse(false, Constants.INVALID_USERNAME.getMessage());
         }
 
-        Authentication authentication = authenticationManager.authenticate(
+        Authentication authentication = authenticateUser(request);
+
+        UserDetails authUser = userService.loadUserByUsername(request.getUsername());
+
+        User user = getUserByUsername(request.getUsername());
+
+        Optional<Teacher> teacher = getTeacherByUserId(user.getId());
+        Optional<Student> student = getStudentByUserId(user.getId());
+
+        if (isTeacher(authentication)) {
+            return createTeacherLoginResponse(authUser, teacher.orElseThrow());
+        } else if (isStudent(authentication)) {
+            return createStudentLoginResponse(authUser, student.orElseThrow());
+        }
+
+        return createApiResponse(false, Constants.LOGIN_FAILED.getMessage());
+    }
+
+    private boolean isUsernameValid(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
+    private Authentication authenticateUser(LoginDTO request) {
+        return authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
+    }
 
-        var authUser = userService.loadUserByUsername(request.getUsername());
+    private User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException(Constants.INVALID_USERNAME.getMessage()));
+    }
 
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("Invalid username"));
+    private Optional<Teacher> getTeacherByUserId(Long userId) {
+        return teacherRepository.findByUserId(userId);
+    }
 
-        var userId = user.getId();
-        var teacher = teacherRepository.findByUserId(userId);
-        var student = studentRepository.findByUserId(userId);
+    private Optional<Student> getStudentByUserId(Long userId) {
+        return studentRepository.findByUserId(userId);
+    }
 
-        boolean isTeacher = authentication.getAuthorities().stream()
+    private boolean isTeacher(Authentication authentication) {
+        return authentication.getAuthorities().stream()
             .anyMatch(role -> role.getAuthority().equals("ROLE_TEACHER"));
-        boolean isStudent = authentication.getAuthorities().stream()
+    }
+
+    private boolean isStudent(Authentication authentication) {
+        return authentication.getAuthorities().stream()
             .anyMatch(role -> role.getAuthority().equals("ROLE_STUDENT"));
-            
-        if (isTeacher) {
-            Map<String, String> jwtToken = new HashMap<>();
-            jwtToken.put("accessToken", jwtService.generateToken(authUser, teacher.get().getId()));
-            jwtToken.put("refreshToken", jwtService.generateRefreshToken(authUser));
-            return new ApiResponse<>(true, Constants.TEACHER_LOGIN_SUCCESSFULL.getMessage(), jwtToken);
-        } else if (isStudent) {
-            Map<String, String> jwtToken = new HashMap<>();
-            jwtToken.put("accessToken", jwtService.generateToken(authUser, student.get().getId()));
-            jwtToken.put("refreshToken", jwtService.generateRefreshToken(authUser));
-            return new ApiResponse<>(true, Constants.STUDENT_LOGIN_SUCCESSFULL.getMessage(), jwtToken);
-        } 
-        
-        return createApiResponse(false, Constants.LOGIN_FAILED.getMessage());
+    }
+
+    private ApiResponse<Map<String, String>> createTeacherLoginResponse(UserDetails authUser, Teacher teacher) {
+        Map<String, String> jwtToken = new HashMap<>();
+        jwtToken.put("accessToken", jwtService.generateToken(authUser, teacher.getId()));
+        jwtToken.put("refreshToken", jwtService.generateRefreshToken(authUser));
+        return new ApiResponse<>(true, Constants.TEACHER_LOGIN_SUCCESSFUL.getMessage(), jwtToken);
+    }
+
+    private ApiResponse<Map<String, String>> createStudentLoginResponse(UserDetails authUser, Student student) {
+        Map<String, String> jwtToken = new HashMap<>();
+        jwtToken.put("accessToken", jwtService.generateToken(authUser, student.getId()));
+        jwtToken.put("refreshToken", jwtService.generateRefreshToken(authUser));
+        return new ApiResponse<>(true, Constants.STUDENT_LOGIN_SUCCESSFUL.getMessage(), jwtToken);
     }
 
     private User createUser(RegistrationDTO request) {

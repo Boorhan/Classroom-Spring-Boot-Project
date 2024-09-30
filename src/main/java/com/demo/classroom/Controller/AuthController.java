@@ -72,12 +72,10 @@ public class AuthController {
         if (apiResponse.isSuccess()) {
             return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
         }
-
         return ResponseEntity.badRequest().body(apiResponse);
-        
     }
 
-    @PostMapping("/refresh-token")
+    @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<Map<String, String>>> refreshToken(@RequestHeader("Refresh-Token") String refreshToken) {
         String newAccessToken = authService.refreshAccessToken(refreshToken);
 

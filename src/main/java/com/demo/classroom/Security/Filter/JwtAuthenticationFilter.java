@@ -3,21 +3,27 @@ package com.demo.classroom.Security.Filter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.demo.classroom.Security.Service.JwtService;
+import com.demo.classroom.Utility.Constants;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,7 +38,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     
-
     @Override
     protected void doFilterInternal(
             @NotNull HttpServletRequest request,
@@ -40,8 +45,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
             @NotNull FilterChain filterChain
     ) throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
-        final String refreshToken = request.getHeader("Refresh-Token");
+        final String authHeader = request.getHeader(Constants.AUTH_HEADER);
+        final String refreshToken = request.getHeader(Constants.REFRESH_TOKEN_HEADER);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -54,6 +59,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 
             var roles = jwtService.extractRoles(jwt);
             var userId = jwtService.extractUserId(jwt);
+            
+            SecurityContext securityContext = SecurityContextHolder.getContext();
 
             if (roles == null) {
                 roles = Collections.emptyList();
@@ -63,34 +70,57 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toList());
 
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            Authentication authentication = securityContext.getAuthentication();
 
             if (userName != null && (authentication == null || !authentication.getName().equals(userName))) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userName);
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+
+                    var JwtAuthenticationToken= new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
                             authorities
                     );
 
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                } else if (refreshToken != null) {
-                    String newAccessToken = jwtService.refreshAccessToken(refreshToken, userDetails);
-                    if (newAccessToken != null) {
-                        response.setHeader("Authorization", "Bearer " + newAccessToken);
-                        response.setHeader("Refresh-Token", refreshToken);
-                    } else {
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Refresh token is invalid or expired");
-                        return; 
-                    }
+                    JwtAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    securityContext.setAuthentication(JwtAuthenticationToken);
+                } else {
+                    Optional.ofNullable(refreshToken).ifPresentOrElse(token -> {
+                        String newAccessToken = jwtService.refreshAccessToken(token, userDetails);
+                        if (newAccessToken != null && !newAccessToken.isEmpty()) {
+                            String rotatedRefreshToken = jwtService.rotateRefreshToken(refreshToken, userDetails);
+                            response.setHeader(Constants.AUTH_HEADER, Constants.BEARER_PREFIX + newAccessToken);
+                            response.setHeader(Constants.REFRESH_TOKEN_HEADER, rotatedRefreshToken);
+                        } else {
+                            try {
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, Constants.REFRESH_TOKEN_INVALID.getMessage());
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }, () -> {
+                        try {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, Constants.REFRESH_TOKEN_REQUIRED.getMessage());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
                 }
             }
             filterChain.doFilter(request, response);
-        } catch (Exception exception) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
+        } catch (IllegalArgumentException ex) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, Constants.INVALID_TOKEN_FORMAT.getMessage());
+        } catch (ExpiredJwtException ex) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, Constants.TOKEN_EXPIRED.getMessage());
+        } catch (UnsupportedJwtException ex) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, Constants.UNSUPPORTED_TOKEN.getMessage());
+        } catch (UsernameNotFoundException ex) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, Constants.USER_NOT_FOUND.getMessage());
+        }catch (IOException ex) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, Constants.INTERNAL_SERVER_ERROR.getMessage());
+        }catch (Exception ex) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, Constants.AUTHENTICATION_FAILED.getMessage());
         }
     }
   
