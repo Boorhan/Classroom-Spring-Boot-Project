@@ -11,6 +11,7 @@ public enum Constants {
     TEACHER_LOGIN_SUCCESSFUL("Teacher login successful"),
     STUDENT_REG_SUCCESSFUL("Student registered successfully"),
     STUDENT_LOGIN_SUCCESSFUL("Student login successful"),
+    LOG_OUT_SUCCESSFUL("Logout successful"),
 
     INVALID_ROLE("Invalid role selected."),
     INVALID_USERNAME("Invalid username selected"),
@@ -69,7 +70,7 @@ public enum Constants {
     public enum PublicEndpoints {
 
         SIGNUP("/signup"),
-        LOGIN("/login");;
+        LOGIN("/login");
         
         private final String path;
     

@@ -48,18 +48,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
         final String authHeader = request.getHeader(Constants.AUTH_HEADER);
         final String refreshToken = request.getHeader(Constants.REFRESH_TOKEN_HEADER);
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || !authHeader.startsWith(Constants.BEARER_PREFIX)) {
             filterChain.doFilter(request, response);
             return;
         }
 
+
         try {
             final String jwt = authHeader.substring(7); //"Bearer "=7
+            
+            if (jwtService.isTokenBlacklisted(jwt)) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token has been blacklisted. Please log in again.");
+                return;
+            }
+    
+            if (refreshToken != null && jwtService.isTokenBlacklisted(refreshToken)) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Refresh token has been blacklisted. Please log in again.");
+                return;
+            }
             final String userName = jwtService.extractUsername(jwt);
 
             var roles = jwtService.extractRoles(jwt);
             var userId = jwtService.extractUserId(jwt);
-            
+
             SecurityContext securityContext = SecurityContextHolder.getContext();
 
             if (roles == null) {

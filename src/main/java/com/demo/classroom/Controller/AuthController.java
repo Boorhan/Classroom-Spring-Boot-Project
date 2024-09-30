@@ -6,7 +6,10 @@ import java.util.HashMap;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -20,6 +23,7 @@ import com.demo.classroom.Service.AuthService;
 import com.demo.classroom.Utility.Constants;
 import com.demo.classroom.Utility.ErrorMessages;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -73,6 +77,17 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
         }
         return ResponseEntity.badRequest().body(apiResponse);
+    }
+
+    @PostMapping(value = "/logout")
+    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request) {
+
+        String accessToken = request.getHeader(Constants.AUTH_HEADER).substring(7);
+        String refreshToken = request.getHeader(Constants.REFRESH_TOKEN_HEADER);
+        jwtService.invalidateToken(accessToken);
+        jwtService.invalidateToken(refreshToken);
+        
+        return ResponseEntity.ok(new ApiResponse<>(true, Constants.LOG_OUT_SUCCESSFUL.getMessage(), null));
     }
 
     @PostMapping("/refresh")

@@ -7,13 +7,10 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
 import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.security.core.GrantedAuthority;
@@ -29,6 +26,8 @@ public class JwtService {
     private final long ACCESS_TOKEN_EXPIRATION_TIME;
     private final long REFRESH_TOKEN_EXPIRATION_TIME;
     private long currentTimeMillis = System.currentTimeMillis();
+
+    private Set<String> blacklistedTokens = new HashSet<>();
 
     @Autowired
     public JwtService(Environment env) {
@@ -91,6 +90,14 @@ public class JwtService {
         return null;
     }
 
+    public void invalidateToken(String token) {
+        blacklistedTokens.add(token);
+    }
+
+    public boolean isTokenBlacklisted(String token) {
+        return blacklistedTokens.contains(token);
+    }
+
     public String generateRefreshToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         return buildToken(claims, userDetails, REFRESH_TOKEN_EXPIRATION_TIME);
@@ -116,6 +123,9 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
+        if (isTokenBlacklisted(token)) {
+            return false;
+        }
         return isUsernameMatching(token, userDetails) && !isTokenExpired(token);
     }
 

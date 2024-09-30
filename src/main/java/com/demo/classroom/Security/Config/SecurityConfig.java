@@ -47,6 +47,7 @@ public class SecurityConfig {
             .requestMatchers(PublicEndpoints.getAllPaths()).permitAll()
             .anyRequest().authenticated() 
             .and()
+            .logout().disable()
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) 
             .and()
             .authenticationProvider(authenticationProvider)
