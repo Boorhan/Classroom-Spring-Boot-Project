@@ -7,6 +7,7 @@ import java.util.HashMap;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,7 +39,6 @@ public class AuthController {
         @Valid @RequestBody RegistrationDTO request, 
         BindingResult result
     ) {
-
         if (result.hasErrors()) {
             Map<String, List<String>> errors = ErrorMessages.constructErrorMessages(result);
             ApiResponse<Map<String, List<String>>> errorResponse = new ApiResponse<>(
@@ -50,17 +50,13 @@ public class AuthController {
         }
 
         ApiResponse<Void> apiResponse = authService.registerUser(request);
-        if (apiResponse.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
-        } else {
-            return ResponseEntity.badRequest().body(apiResponse);
-        }
+        return apiResponse.isSuccess() ? 
+            ResponseEntity.status(HttpStatus.CREATED).body(apiResponse) :
+            ResponseEntity.badRequest().body(apiResponse);
     }
-
 
     @PostMapping(value = "/login", consumes = "application/json")
     public ResponseEntity<ApiResponse<?>> login(@Valid @RequestBody LoginDTO request, BindingResult result) {
-
         if (result.hasErrors()) {
             Map<String, List<String>> errors = ErrorMessages.constructErrorMessages(result);
             ApiResponse<Map<String, List<String>>> errorResponse = new ApiResponse<>(
@@ -72,21 +68,19 @@ public class AuthController {
         }
 
         ApiResponse<?> apiResponse = authService.loginUser(request);
-
-        if (apiResponse.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
-        }
-        return ResponseEntity.badRequest().body(apiResponse);
+        return apiResponse.isSuccess() ? 
+            ResponseEntity.status(HttpStatus.OK).body(apiResponse) :
+            ResponseEntity.badRequest().body(apiResponse);
     }
 
     @PostMapping(value = "/logout")
     public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request) {
-
         String accessToken = request.getHeader(Constants.AUTH_HEADER).substring(7);
         String refreshToken = request.getHeader(Constants.REFRESH_TOKEN_HEADER);
         jwtService.invalidateToken(accessToken);
         jwtService.invalidateToken(refreshToken);
         
+        SecurityContextHolder.clearContext();
         return ResponseEntity.ok(new ApiResponse<>(true, Constants.LOG_OUT_SUCCESSFUL.getMessage(), null));
     }
 
@@ -101,6 +95,6 @@ public class AuthController {
         Map<String, String> jwtToken = new HashMap<>();
         jwtToken.put("accessToken", newAccessToken);
         jwtToken.put("refreshToken", refreshToken);
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(true, "Token Generate Successfull", jwtToken));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Token generated successfully", jwtToken));
     }
 }

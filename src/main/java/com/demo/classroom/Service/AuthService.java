@@ -4,11 +4,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -45,7 +47,7 @@ public class AuthService {
 
     private final JwtService jwtService;
 
-    private final UserService userService;
+    private final UserDetailsService userDetailsService;
 
     
     @Transactional
@@ -83,15 +85,24 @@ public class AuthService {
     @Transactional
     public ApiResponse<?> loginUser(LoginDTO request) {
 
+        if (isUserAlreadyAuthenticated()) {
+            return createApiResponse(false, Constants.ALREADY_LOGGED_IN.getMessage());
+        }
+
         String userName = request.getUsername();
+        String password = request.getPassword();
 
         if (!isUsernameValid(userName)) {
             return createApiResponse(false, Constants.INVALID_USERNAME.getMessage());
         }
 
+        if (!isPasswordValid(userName, password)) {
+            return createApiResponse(false, Constants.INVALID_PASSWORD.getMessage());
+        }
+
         Authentication authentication = authenticateUser(request);
 
-        UserDetails authUser = userService.loadUserByUsername(userName);
+        UserDetails authUser = userDetailsService.loadUserByUsername(userName);
 
         User user = getUserByUsername(userName);
 
@@ -111,10 +122,22 @@ public class AuthService {
         return userRepository.existsByUsername(username);
     }
 
+    private boolean isPasswordValid(String userName, String rawPassword) {
+        return userRepository.findByUsername(userName)
+            .map(user -> passwordEncoder.matches(rawPassword, user.getPassword()))
+            .orElse(false); 
+    }
     private Authentication authenticateUser(LoginDTO request) {
         return authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
+    }
+
+    private boolean isUserAlreadyAuthenticated() {
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        Authentication authentication = securityContext.getAuthentication();
+        return authentication != null && authentication.isAuthenticated() 
+            && !(authentication instanceof UsernamePasswordAuthenticationToken);
     }
 
     private User getUserByUsername(String username) {
@@ -140,7 +163,19 @@ public class AuthService {
             .anyMatch(role -> role.getAuthority().equals("ROLE_STUDENT"));
     }
 
-    private ApiResponse<Map<String, String>> createTeacherLoginResponse(UserDetails authUser, Teacher teacher) {
+    private ApiResponse<Map<String, String>> createTeacherLoginResponse(UserDetails authUser, Teacher teacher) {    
+
+        String accessToken= jwtService.generateToken(authUser, teacher.getId());
+        String refreshToken= jwtService.generateRefreshToken(authUser);
+
+        if(jwtService.isTokenBlacklisted(accessToken)){
+            jwtService.removeFromBlacklist(accessToken);
+        }
+
+        if(jwtService.isTokenBlacklisted(refreshToken)){
+            jwtService.removeFromBlacklist(refreshToken);
+        }
+
         Map<String, String> jwtToken = new HashMap<>();
         jwtToken.put("accessToken", jwtService.generateToken(authUser, teacher.getId()));
         jwtToken.put("refreshToken", jwtService.generateRefreshToken(authUser));
@@ -148,9 +183,20 @@ public class AuthService {
     }
 
     private ApiResponse<Map<String, String>> createStudentLoginResponse(UserDetails authUser, Student student) {
+
+        String accessToken= jwtService.generateToken(authUser, student.getId());
+        String refreshToken= jwtService.generateRefreshToken(authUser);
+
+        if(jwtService.isTokenBlacklisted(accessToken)){
+            jwtService.removeFromBlacklist(accessToken);
+        }
+
+        if(jwtService.isTokenBlacklisted(refreshToken)){
+            jwtService.removeFromBlacklist(refreshToken);
+        }
         Map<String, String> jwtToken = new HashMap<>();
-        jwtToken.put("accessToken", jwtService.generateToken(authUser, student.getId()));
-        jwtToken.put("refreshToken", jwtService.generateRefreshToken(authUser));
+        jwtToken.put("accessToken",accessToken);
+        jwtToken.put("refreshToken", refreshToken);
         return new ApiResponse<>(true, Constants.STUDENT_LOGIN_SUCCESSFUL.getMessage(), jwtToken);
     }
 
@@ -215,7 +261,7 @@ public class AuthService {
         }
 
         String username = jwtService.extractUsername(refreshToken); 
-        UserDetails userDetails = userService.loadUserByUsername(username);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
         if (!jwtService.isTokenValid(refreshToken, userDetails)) {
             return null; 

@@ -6,6 +6,7 @@ public enum Constants {
     USERNAME_TAKEN("Username is already taken."),
     USER_NOT_FOUND("User not found."),
     EMAIL_TAKEN("Email is already taken."),
+    ALREADY_LOGGED_IN("User is already logged in."),
 
     TEACHER_REG_SUCCESSFUL("Teacher registered successfully"),
     TEACHER_LOGIN_SUCCESSFUL("Teacher login successful"),
@@ -15,6 +16,7 @@ public enum Constants {
 
     INVALID_ROLE("Invalid role selected."),
     INVALID_USERNAME("Invalid username selected"),
+    INVALID_PASSWORD("Invalid password"),
     VALIDATION_FAILED("Validation failed."),
     REGISTRATION_FAILED("An error occurred during registration."),
     LOGIN_FAILED("An error occurred during login."),

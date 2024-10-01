@@ -103,6 +103,10 @@ public class JwtService {
     public boolean isTokenBlacklisted(String token) {
         return blacklistedTokens.contains(token);
     }
+    
+    public void removeFromBlacklist(String token) {
+        blacklistedTokens.remove(token);
+    }
 
     public String generateRefreshToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
