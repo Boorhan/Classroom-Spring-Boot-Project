@@ -13,6 +13,7 @@ public enum Constants {
     STUDENT_REG_SUCCESSFUL("Student registered successfully"),
     STUDENT_LOGIN_SUCCESSFUL("Student login successful"),
     LOG_OUT_SUCCESSFUL("Logout successful"),
+    COURSE_CREATED_SUCCESSFULLY("Course created successfully"),
 
     INVALID_ROLE("Invalid role selected."),
     INVALID_USERNAME("Invalid username selected"),
@@ -58,7 +59,7 @@ public enum Constants {
     }
 
     public enum ExpirationTime {
-        ACCESS_TOKEN(900000L),
+        ACCESS_TOKEN(90000000L),
         REFRESH_TOKEN(86400000L);
 
         private final long value;
