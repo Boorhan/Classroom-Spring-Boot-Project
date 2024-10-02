@@ -1,12 +1,22 @@
 package com.demo.classroom.Service;
 import java.util.Optional;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.demo.classroom.DTO.ApiResponse;
+import com.demo.classroom.DTO.LoginDTO;
 import com.demo.classroom.DTO.RegistrationDTO;
 import com.demo.classroom.Entity.Student;
 import com.demo.classroom.Entity.Teacher;
@@ -14,31 +24,32 @@ import com.demo.classroom.Entity.User;
 import com.demo.classroom.Repository.StudentRepository;
 import com.demo.classroom.Repository.TeacherRepository;
 import com.demo.classroom.Repository.UserRepository;
+import com.demo.classroom.Security.Service.JwtService;
 import com.demo.classroom.Utility.Constants;
 import com.demo.classroom.Utility.Constants.Role;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    private TeacherRepository teacherRepository;
+    private final TeacherRepository teacherRepository;
 
-    private StudentRepository studentRepository;
+    private final StudentRepository studentRepository;
 
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    public AuthService(UserRepository userRepository, TeacherRepository teacherRepository, StudentRepository studentRepository, PasswordEncoder passwordEncoder){
-        this.userRepository=userRepository;
-        this.teacherRepository=teacherRepository;
-        this.studentRepository=studentRepository;
-        this.passwordEncoder=passwordEncoder;
-        
-    } 
+    private final AuthenticationManager authenticationManager;
 
+    private final JwtService jwtService;
+
+    private final UserDetailsService userDetailsService;
+
+    
     @Transactional
     public ApiResponse<Void> registerUser(RegistrationDTO request) {
         
@@ -60,15 +71,132 @@ public class AuthService {
 
             if (Role.TEACHER.equals(role)) {
                 registerTeacher(user, name);
-                return createApiResponse(true, Constants.TEACHER_REG_SUCCESSFULL.getMessage());
+                return createApiResponse(true, Constants.TEACHER_REG_SUCCESSFUL.getMessage());
             } else if (Role.STUDENT.equals(role)) {
                 registerStudent(user, name);
-                return createApiResponse(true, Constants.STUDENT_REG_SUCCESSFULL.getMessage());
+                return createApiResponse(true, Constants.STUDENT_REG_SUCCESSFUL.getMessage());
             }
         }catch(IllegalArgumentException e){
             return createApiResponse(false, Constants.INVALID_ROLE.getMessage());
         }
         return createApiResponse(false, Constants.REGISTRATION_FAILED.getMessage());
+    }
+    
+    @Transactional
+    public ApiResponse<?> loginUser(LoginDTO request) {
+
+        if (isUserAlreadyAuthenticated()) {
+            return createApiResponse(false, Constants.ALREADY_LOGGED_IN.getMessage());
+        }
+
+        String userName = request.getUsername();
+        String password = request.getPassword();
+
+        if (!isUsernameValid(userName)) {
+            return createApiResponse(false, Constants.INVALID_USERNAME.getMessage());
+        }
+
+        if (!isPasswordValid(userName, password)) {
+            return createApiResponse(false, Constants.INVALID_PASSWORD.getMessage());
+        }
+
+        Authentication authentication = authenticateUser(request);
+
+        UserDetails authUser = userDetailsService.loadUserByUsername(userName);
+
+        User user = getUserByUsername(userName);
+
+        Optional<Teacher> teacher = getTeacherByUserId(user.getId());
+        Optional<Student> student = getStudentByUserId(user.getId());
+
+        if (isTeacher(authentication)) {
+            return createTeacherLoginResponse(authUser, teacher.orElseThrow());
+        } else if (isStudent(authentication)) {
+            return createStudentLoginResponse(authUser, student.orElseThrow());
+        }
+
+        return createApiResponse(false, Constants.LOGIN_FAILED.getMessage());
+    }
+
+    private boolean isUsernameValid(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
+    private boolean isPasswordValid(String userName, String rawPassword) {
+        return userRepository.findByUsername(userName)
+            .map(user -> passwordEncoder.matches(rawPassword, user.getPassword()))
+            .orElse(false); 
+    }
+    private Authentication authenticateUser(LoginDTO request) {
+        return authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+        );
+    }
+
+    private boolean isUserAlreadyAuthenticated() {
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        Authentication authentication = securityContext.getAuthentication();
+        return authentication != null && authentication.isAuthenticated() 
+            && !(authentication instanceof UsernamePasswordAuthenticationToken);
+    }
+
+    private User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException(Constants.INVALID_USERNAME.getMessage()));
+    }
+
+    private Optional<Teacher> getTeacherByUserId(Long userId) {
+        return teacherRepository.findByUserId(userId);
+    }
+
+    private Optional<Student> getStudentByUserId(Long userId) {
+        return studentRepository.findByUserId(userId);
+    }
+
+    private boolean isTeacher(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+            .anyMatch(role -> role.getAuthority().equals("ROLE_TEACHER"));
+    }
+
+    private boolean isStudent(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+            .anyMatch(role -> role.getAuthority().equals("ROLE_STUDENT"));
+    }
+
+    private ApiResponse<Map<String, String>> createTeacherLoginResponse(UserDetails authUser, Teacher teacher) {    
+
+        String accessToken= jwtService.generateToken(authUser, teacher.getId());
+        String refreshToken= jwtService.generateRefreshToken(authUser);
+
+        removeTokensFromBlackList(accessToken, refreshToken);
+
+        Map<String, String> jwtToken = new HashMap<>();
+        jwtToken.put("accessToken", accessToken);
+        jwtToken.put("refreshToken", refreshToken);
+        return new ApiResponse<>(true, Constants.TEACHER_LOGIN_SUCCESSFUL.getMessage(), jwtToken);
+    }
+
+    private void removeTokensFromBlackList(String accessToken, String refreshToken){
+        if(jwtService.isTokenBlacklisted(accessToken)){
+            jwtService.removeFromBlacklist(accessToken);
+        }
+
+        if(jwtService.isTokenBlacklisted(refreshToken)){
+            jwtService.removeFromBlacklist(refreshToken);
+        }
+    }
+
+    private ApiResponse<Map<String, String>> createStudentLoginResponse(UserDetails authUser, Student student) {
+
+        String accessToken= jwtService.generateToken(authUser, student.getId());
+        String refreshToken= jwtService.generateRefreshToken(authUser);
+
+        removeTokensFromBlackList(accessToken, refreshToken);
+        
+        Map<String, String> jwtToken = new HashMap<>();
+        jwtToken.put("accessToken",accessToken);
+        jwtToken.put("refreshToken", refreshToken);
+        return new ApiResponse<>(true, Constants.STUDENT_LOGIN_SUCCESSFUL.getMessage(), jwtToken);
     }
 
     private User createUser(RegistrationDTO request) {
@@ -124,4 +252,20 @@ public class AuthService {
 
         return formattedRollNumber;
     }
+
+    public String refreshAccessToken(String refreshToken) {
+    
+        if (refreshToken == null){
+            return null;
+        }
+
+        String username = jwtService.extractUsername(refreshToken); 
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+        if (!jwtService.isTokenValid(refreshToken, userDetails)) {
+            return null; 
+        }
+
+        return jwtService.generateToken(userDetails);
+    }  
 }
