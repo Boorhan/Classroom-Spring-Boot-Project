@@ -17,6 +17,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 
 import com.demo.classroom.Security.Filter.JwtAuthenticationFilter;
+import com.demo.classroom.Utility.Constants;
 import com.demo.classroom.Utility.Constants.PublicEndpoints;
 
 @Configuration
@@ -49,7 +50,7 @@ public class SecurityConfig {
             .and()
             .exceptionHandling()
             .authenticationEntryPoint((request, response, authException) -> {
-                response.setContentType("application/json");
+                response.setContentType(Constants.CONTENT_TYPE);
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 response.getWriter().write("{\"success\": false, \"message\": \"Unauthorized: " + authException.getMessage() + "\"}");
                 response.getWriter().flush();

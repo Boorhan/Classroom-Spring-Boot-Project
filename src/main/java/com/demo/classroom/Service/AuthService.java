@@ -168,6 +168,15 @@ public class AuthService {
         String accessToken= jwtService.generateToken(authUser, teacher.getId());
         String refreshToken= jwtService.generateRefreshToken(authUser);
 
+        removeTokensFromBlackList(accessToken, refreshToken);
+
+        Map<String, String> jwtToken = new HashMap<>();
+        jwtToken.put("accessToken", accessToken);
+        jwtToken.put("refreshToken", refreshToken);
+        return new ApiResponse<>(true, Constants.TEACHER_LOGIN_SUCCESSFUL.getMessage(), jwtToken);
+    }
+
+    private void removeTokensFromBlackList(String accessToken, String refreshToken){
         if(jwtService.isTokenBlacklisted(accessToken)){
             jwtService.removeFromBlacklist(accessToken);
         }
@@ -175,11 +184,6 @@ public class AuthService {
         if(jwtService.isTokenBlacklisted(refreshToken)){
             jwtService.removeFromBlacklist(refreshToken);
         }
-
-        Map<String, String> jwtToken = new HashMap<>();
-        jwtToken.put("accessToken", jwtService.generateToken(authUser, teacher.getId()));
-        jwtToken.put("refreshToken", jwtService.generateRefreshToken(authUser));
-        return new ApiResponse<>(true, Constants.TEACHER_LOGIN_SUCCESSFUL.getMessage(), jwtToken);
     }
 
     private ApiResponse<Map<String, String>> createStudentLoginResponse(UserDetails authUser, Student student) {
@@ -187,13 +191,8 @@ public class AuthService {
         String accessToken= jwtService.generateToken(authUser, student.getId());
         String refreshToken= jwtService.generateRefreshToken(authUser);
 
-        if(jwtService.isTokenBlacklisted(accessToken)){
-            jwtService.removeFromBlacklist(accessToken);
-        }
-
-        if(jwtService.isTokenBlacklisted(refreshToken)){
-            jwtService.removeFromBlacklist(refreshToken);
-        }
+        removeTokensFromBlackList(accessToken, refreshToken);
+        
         Map<String, String> jwtToken = new HashMap<>();
         jwtToken.put("accessToken",accessToken);
         jwtToken.put("refreshToken", refreshToken);
