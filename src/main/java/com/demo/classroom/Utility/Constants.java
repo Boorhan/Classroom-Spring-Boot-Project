@@ -62,6 +62,7 @@ public enum Constants {
 
     public enum ExpirationTime {
         ACCESS_TOKEN(900000L),
+        ACCESS_TOKEN(900000L),
         REFRESH_TOKEN(86400000L);
 
         private final long value;

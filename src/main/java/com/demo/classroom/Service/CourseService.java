@@ -20,24 +20,33 @@ import com.demo.classroom.Utility.Constants;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@RequiredArgsConstructor
 public class CourseService {
 
     private final CourseRepository courseRepository;
+    private final CourseRepository courseRepository;
 
+    private final TeacherRepository teacherRepository;
     private final TeacherRepository teacherRepository;
 
     private final JwtService jwtService; 
+    private final JwtService jwtService; 
 
+    @Transactional
     @Transactional
     public ApiResponse<Void> createCourse(CourseDTO courseDTO, String token) {
         Long teacherId = jwtService.extractUserId(token);  
         Optional<Teacher> teacher = teacherRepository.findByUserId(teacherId);
        
         if (teacher.isEmpty()) {
+           return createApiResponse(false, Constants.USER_NOT_FOUND.getMessage());
            return createApiResponse(false, Constants.USER_NOT_FOUND.getMessage());
         }
 
