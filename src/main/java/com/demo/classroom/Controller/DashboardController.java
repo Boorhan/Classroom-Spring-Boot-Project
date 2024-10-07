@@ -11,6 +11,7 @@ import com.demo.classroom.DTO.CourseDTO;
 import com.demo.classroom.Entity.Course;
 import com.demo.classroom.Service.CourseService;
 import com.demo.classroom.Utility.Constants;
+import com.demo.classroom.Utility.ErrorMessages;
 
 import jakarta.validation.Valid;
 
@@ -31,7 +32,7 @@ public class DashboardController {
     @Autowired
     private CourseService courseService;
 
-    @PostMapping(value = "/create_course", consumes = "application/json", produces = "application/json")
+    @PostMapping(value = "/course/create", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('TEACHER')") 
     public ResponseEntity<ApiResponse<?>> createCourse(
         @Valid @RequestBody CourseDTO courseDTO, 
@@ -39,27 +40,18 @@ public class DashboardController {
         @RequestHeader("Authorization") String token 
     ) {
         if (result.hasErrors()) {
-            
-            Map<String, List<String>> errors = new HashMap<>();
-
-            result.getFieldErrors().forEach(error -> {
-                String fieldName = error.getField();
-                String errorMessage = error.getDefaultMessage();
-                errors.computeIfAbsent(fieldName, k -> new ArrayList<>()).add(errorMessage);
-            });
-
-            ApiResponse<Map<String, List<String>>> errorResponse = new ApiResponse<>(
-                false, 
-                "Validation failed", 
-                errors
-            );
-
+            Map<String, List<String>> errors = ErrorMessages.constructErrorMessages(result);
+                ApiResponse<Map<String, List<String>>> errorResponse = new ApiResponse<>(
+                    false, 
+                    Constants.VALIDATION_FAILED.getMessage(), 
+                    errors
+                );
             return ResponseEntity.badRequest().body(errorResponse);
         }
 
         String jwtToken = token.substring(7);
         ApiResponse<Void> apiResponse = courseService.createCourse(courseDTO, jwtToken);
-        
+
         return apiResponse.isSuccess() ? 
             ResponseEntity.status(HttpStatus.CREATED).body(apiResponse) :
             ResponseEntity.badRequest().body(apiResponse);
