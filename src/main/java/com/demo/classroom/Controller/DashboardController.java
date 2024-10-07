@@ -8,16 +8,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.demo.classroom.DTO.ApiResponse;
 import com.demo.classroom.DTO.CourseDTO;
-import com.demo.classroom.Entity.Course;
+import com.demo.classroom.DTO.GetCourseDTO;
 import com.demo.classroom.Service.CourseService;
 import com.demo.classroom.Utility.Constants;
 import com.demo.classroom.Utility.ErrorMessages;
 
 import jakarta.validation.Valid;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,8 +56,9 @@ public class DashboardController {
     }
 
     @GetMapping("/course/all")
+    @PreAuthorize("hasRole('STUDENT')") 
     public ResponseEntity<ApiResponse<?>> getAllCourses() {
-        List<Course> courses = courseService.getAllCourses();
+        List<GetCourseDTO> courses = courseService.getAllCourses();
         if (courses == null || courses.isEmpty()) {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(false, Constants.COURSE_NOT_AVAILABLE.getMessage(), null));
@@ -67,5 +66,4 @@ public class DashboardController {
         return ResponseEntity.ok()
                 .body(new ApiResponse<>(true, Constants.COURSES_FETCHED_SUCCESSFULLY.getMessage(), courses));
     }
-
 }
