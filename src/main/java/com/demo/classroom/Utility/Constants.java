@@ -7,6 +7,7 @@ public enum Constants {
     USER_NOT_FOUND("User not found."),
     EMAIL_TAKEN("Email is already taken."),
     ALREADY_LOGGED_IN("User is already logged in."),
+    COURSE_NOT_AVAILABLE("No courses available"),
 
     TEACHER_REG_SUCCESSFUL("Teacher registered successfully"),
     TEACHER_LOGIN_SUCCESSFUL("Teacher login successful"),
@@ -14,7 +15,8 @@ public enum Constants {
     STUDENT_LOGIN_SUCCESSFUL("Student login successful"),
     LOG_OUT_SUCCESSFUL("Logout successful"),
     COURSE_CREATED_SUCCESSFULLY("Course created successfully"),
- 
+    COURSES_FETCHED_SUCCESSFULLY("Successfully fetched all the courses"),
+
     INVALID_ROLE("Invalid role selected."),
     INVALID_USERNAME("Invalid username selected"),
     INVALID_PASSWORD("Invalid password"),

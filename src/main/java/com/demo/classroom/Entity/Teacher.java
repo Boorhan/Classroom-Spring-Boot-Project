@@ -3,6 +3,8 @@ package com.demo.classroom.Entity;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -44,5 +46,6 @@ public class Teacher {
         joinColumns = @JoinColumn(name = "teacher_id"),
         inverseJoinColumns = @JoinColumn(name = "course_id")
     )
+    @JsonBackReference
     private List<Course> courses = new ArrayList<>();
 }

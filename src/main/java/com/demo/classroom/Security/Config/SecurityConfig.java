@@ -48,6 +48,7 @@ public class SecurityConfig {
             .requestMatchers(PublicEndpoints.getAllPaths()).permitAll()
             .requestMatchers("/course/create").hasRole("TEACHER")
             .requestMatchers("/course/enroll").hasRole("STUDENT")
+            .requestMatchers("/course/all").hasRole("STUDENT")
             .anyRequest().authenticated() 
             .and()
             .exceptionHandling()

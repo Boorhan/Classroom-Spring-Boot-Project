@@ -2,11 +2,13 @@ package com.demo.classroom.Service;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.demo.classroom.DTO.ApiResponse;
 import com.demo.classroom.DTO.BookDTO;
 import com.demo.classroom.DTO.CourseDTO;
+import com.demo.classroom.DTO.GetCourseDTO;
 import com.demo.classroom.Entity.Book;
 import com.demo.classroom.Entity.Course;
 import com.demo.classroom.Entity.Teacher;
@@ -17,6 +19,7 @@ import com.demo.classroom.Utility.Constants;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
 
 import java.util.Optional;
 
@@ -58,6 +61,28 @@ public class CourseService {
         teacher.get().getCourses().add(course);
         courseRepository.save(course);
         return createApiResponse(true, Constants.COURSE_CREATED_SUCCESSFULLY.getMessage());
+    }
+
+    public List<GetCourseDTO> getAllCourses() {
+        List<Course> courses = courseRepository.findAll(); 
+        List<GetCourseDTO> courseDTOs = new ArrayList<>();
+    
+        for (Course course : courses) {
+            List<String> teacherNames = course.getTeachers().stream()
+                .map(teacher -> teacher.getName()) 
+                .collect(Collectors.toList());
+
+            
+            List<BookDTO> bookDTOs = course.getBooks().stream()
+            .map(book -> new BookDTO(book.getName(), book.getAuthor()))
+            .collect(Collectors.toList());
+        
+    
+            GetCourseDTO getCourseDTO = new GetCourseDTO(course.getId(), course.getTitle(), teacherNames, bookDTOs);
+            courseDTOs.add(getCourseDTO);
+        }
+    
+        return courseDTOs;
     }
 
     private ApiResponse<Void> createApiResponse(boolean success, String message){
