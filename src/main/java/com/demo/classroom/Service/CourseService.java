@@ -2,7 +2,6 @@ package com.demo.classroom.Service;
 
 import java.util.List;
 import java.util.ArrayList;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.demo.classroom.DTO.ApiResponse;
@@ -16,26 +15,28 @@ import com.demo.classroom.Repository.TeacherRepository;
 import com.demo.classroom.Security.Service.JwtService;
 import com.demo.classroom.Utility.Constants;
 
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class CourseService {
 
-    @Autowired
-    private CourseRepository courseRepository;
+    private final CourseRepository courseRepository;
 
-    @Autowired
-    private TeacherRepository teacherRepository;
+    private final TeacherRepository teacherRepository;
 
-    @Autowired
-    private JwtService jwtService; 
+    private final JwtService jwtService; 
 
+    @Transactional
     public ApiResponse<Void> createCourse(CourseDTO courseDTO, String token) {
         Long teacherId = jwtService.extractUserId(token);  
         Optional<Teacher> teacher = teacherRepository.findByUserId(teacherId);
        
         if (teacher.isEmpty()) {
-           return createApiResponse(true, Constants.USER_NOT_FOUND.getMessage());
+           return createApiResponse(false, Constants.USER_NOT_FOUND.getMessage());
         }
 
         Course course = new Course();
@@ -57,6 +58,10 @@ public class CourseService {
         teacher.get().getCourses().add(course);
         courseRepository.save(course);
         return createApiResponse(true, Constants.COURSE_CREATED_SUCCESSFULLY.getMessage());
+    }
+
+    public List<Course> getAllCourses() {
+        return courseRepository.findAll();
     }
 
     private ApiResponse<Void> createApiResponse(boolean success, String message){
