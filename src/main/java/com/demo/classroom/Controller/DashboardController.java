@@ -80,4 +80,11 @@ public class DashboardController {
         return ResponseEntity.ok()
                 .body(new ApiResponse<>(true, Constants.COURSES_FETCHED_SUCCESSFULLY.getMessage(), courses));
     }
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse> getDashboard(@RequestHeader("Authorization") String token) {
+        String jwtToken = token.substring(7);
+        return ResponseEntity.ok().body(courseService.goToDashboard(jwtToken));
+    }
 }

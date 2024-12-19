@@ -39,11 +39,8 @@ public class CourseService {
     @Transactional
     public ApiResponse<Void> createCourse(CourseDTO courseDTO, String token) {
         Long teacherId = jwtService.extractUserId(token);  
-        Optional<Teacher> teacher = teacherRepository.findByUserId(teacherId);
-       
-        if (teacher.isEmpty()) {
-           return createApiResponse(false, Constants.USER_NOT_FOUND.getMessage());
-        }
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with ID: " + teacherId));;
 
         Course course = new Course();
         course.setTitle(courseDTO.getTitle());
@@ -59,10 +56,11 @@ public class CourseService {
             }
         }
         course.setBooks(books);
-        
-        course.getTeachers().add(teacher.get());
-        teacher.get().getCourses().add(course);
+
+        teacher.getCourses().add(course);
+        course.getTeachers().add(teacher);
         courseRepository.save(course);
+        teacherRepository.save(teacher);
         return createApiResponse(true, Constants.COURSE_CREATED_SUCCESSFULLY.getMessage());
     }
 
@@ -120,6 +118,39 @@ public class CourseService {
                 })
                 .collect(Collectors.toList());
     }
+
+    public ApiResponse goToDashboard(String token) {
+        String role = jwtService.extractRoles(token).get(0);
+
+        if (role.equals("ROLE_STUDENT")) {
+            Long studentId = jwtService.extractUserId(token);
+            Student currentStudent = studentRepository.findById(studentId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Student not found with ID: " + studentId));
+
+            List<Course> enrolledCourses = currentStudent.getCourses();
+            if (enrolledCourses.isEmpty()) {
+                throw new ResourceNotFoundException("The student is not enrolled in any courses.");
+            }
+            return new ApiResponse<>(true, "Enrolled courses for the Student. Name: " + currentStudent.getName(), enrolledCourses);
+        }
+
+        else if (role.equals("ROLE_TEACHER")) {
+            Long teacherId = jwtService.extractUserId(token);
+            Teacher teacher = teacherRepository.findById(teacherId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with ID: " + teacherId));
+
+            List<Course> createdCourses = teacher.getCourses();
+            if (createdCourses.isEmpty()) {
+                throw new ResourceNotFoundException("The teacher has not created any courses.");
+            }
+            return new ApiResponse<>(true, "Courses created by the Teacher. Name: " + teacher.getName(), createdCourses);
+        }
+
+        else {
+            throw new IllegalArgumentException("Invalid role: " + role);
+        }
+    }
+
 
     private ApiResponse<Void> createApiResponse(boolean success, String message){
         return new ApiResponse<Void>(success, message);

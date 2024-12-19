@@ -43,6 +43,6 @@ public class Course {
     private List<Student> students = new ArrayList<>();
 
     @ManyToMany(mappedBy = "courses")
-    @JsonManagedReference
+    @JsonIgnore
     private List<Teacher> teachers = new ArrayList<>();
 }
