@@ -136,8 +136,9 @@ public class AuthService {
     private boolean isUserAlreadyAuthenticated() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         Authentication authentication = securityContext.getAuthentication();
-        return authentication != null && authentication.isAuthenticated() 
-            && !(authentication instanceof UsernamePasswordAuthenticationToken);
+        return false;
+//                authentication != null && authentication.isAuthenticated()
+//            && !(authentication instanceof UsernamePasswordAuthenticationToken);
     }
 
     private User getUserByUsername(String username) {

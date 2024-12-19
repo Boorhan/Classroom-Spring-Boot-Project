@@ -41,29 +41,34 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf().disable()
-            .cors()
-            .and()
-            .authorizeHttpRequests()
-            .requestMatchers(PublicEndpoints.getAllPaths()).permitAll()
-            .requestMatchers("/course/create").hasRole("TEACHER")
-            .requestMatchers("/course/enroll").hasRole("STUDENT")
-            .requestMatchers("/course/all").hasRole("STUDENT")
-            .anyRequest().authenticated() 
-            .and()
-            .exceptionHandling()
-            .authenticationEntryPoint((request, response, authException) -> {
-                response.setContentType(Constants.CONTENT_TYPE);
-                response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                response.getWriter().write("{\"success\": false, \"message\": \"Unauthorized: " + authException.getMessage() + "\"}");
-                response.getWriter().flush();
-            })
-            .and()
-            .logout().disable()
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) 
-            .and()
-            .authenticationProvider(authenticationProvider)
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf().disable()
+                .cors()
+                .and()
+                .authorizeHttpRequests()
+                .requestMatchers(
+                        "/swagger-ui/**",       // Swagger UI
+                        "/v3/api-docs/**",      // OpenAPI docs
+                        "/webjars/**"           // Webjar assets
+                ).permitAll()
+                .requestMatchers(PublicEndpoints.getAllPaths()).permitAll()
+                .requestMatchers("/course/create").hasRole("TEACHER")
+                .requestMatchers("/course/enroll").hasRole("STUDENT")
+                .requestMatchers("/course/all").hasRole("STUDENT")
+                .anyRequest().authenticated()
+                .and()
+                .exceptionHandling()
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setContentType(Constants.CONTENT_TYPE);
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.getWriter().write("{\"success\": false, \"message\": \"Unauthorized: " + authException.getMessage() + "\"}");
+                    response.getWriter().flush();
+                })
+                .and()
+                .logout().disable()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and()
+                .authenticationProvider(authenticationProvider)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -71,7 +76,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(CORS_ALLOWED_ORIGINS)); 
+        configuration.setAllowedOrigins(Arrays.asList(CORS_ALLOWED_ORIGINS));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
