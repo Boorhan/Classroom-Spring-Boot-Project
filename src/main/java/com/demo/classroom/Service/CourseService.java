@@ -1,7 +1,6 @@
 package com.demo.classroom.Service;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.demo.classroom.DTO.*;
@@ -20,9 +19,6 @@ import com.demo.classroom.Utility.Constants;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -181,7 +177,23 @@ public class CourseService {
         return  new ApiResponse<>(true, "Course details are in below.", course);
     }
 
+    public ApiResponse getAllEnrolledStudent(String jwtToken, Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with ID: " + courseId));
+        List<Map<String, Object>> students = course.getStudents().stream()
+                .map(student -> {
+                    Map<String, Object> studentMap = new HashMap<>();
+                    studentMap.put("studentId", student.getId());
+                    studentMap.put("studentName", student.getName());
+                    return studentMap;
+                })
+                .collect(Collectors.toList());
+        return  new ApiResponse<>(true, "All enrolled student", course.getStudents().isEmpty()?"No one has enrolled this course.":students);
+    }
+
     private ApiResponse<Void> createApiResponse(boolean success, String message){
         return new ApiResponse<Void>(success, message);
     }
+
+
 }

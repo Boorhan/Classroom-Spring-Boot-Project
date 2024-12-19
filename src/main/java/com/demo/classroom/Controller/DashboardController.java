@@ -94,4 +94,13 @@ public class DashboardController {
         String jwtToken = token.substring(7);
         return ResponseEntity.ok().body(courseService.getCourseDetails(jwtToken, request.get("courseId")));
     }
+
+    @GetMapping("/course/enrolled/all-student")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse> getAllEnrolledStudent(
+            @RequestBody Map<String, Long> request,
+            @RequestHeader("Authorization") String token) {
+        String jwtToken = token.substring(7);
+        return ResponseEntity.ok().body(courseService.getAllEnrolledStudent(jwtToken, request.get("courseId")));
+    }
 }
