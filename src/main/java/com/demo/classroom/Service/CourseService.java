@@ -190,10 +190,28 @@ public class CourseService {
                 .collect(Collectors.toList());
         return  new ApiResponse<>(true, "All enrolled student", course.getStudents().isEmpty()?"No one has enrolled this course.":students);
     }
+    public ApiResponse getProfile(String jwtToken) {
+        String role = jwtService.extractRoles(jwtToken).get(0);
+
+        if (role.equals("ROLE_STUDENT")) {
+            Long studentId = jwtService.extractUserId(jwtToken);
+            Student currentStudent = studentRepository.findById(studentId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Student not found with ID: " + studentId));
+            return new ApiResponse<>(true, "Profile details for the Student. Name: " + currentStudent.getName(), currentStudent);
+        }
+
+        else if (role.equals("ROLE_TEACHER")) {
+            Long teacherId = jwtService.extractUserId(jwtToken);
+            Teacher teacher = teacherRepository.findById(teacherId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with ID: " + teacherId));
+            return new ApiResponse<>(true, "Profile details for the Teacher. Name: " + teacher.getName(), teacher);
+        }
+        else {
+            throw new IllegalArgumentException("Invalid role: " + role);
+        }
+    }
 
     private ApiResponse<Void> createApiResponse(boolean success, String message){
         return new ApiResponse<Void>(success, message);
     }
-
-
 }
