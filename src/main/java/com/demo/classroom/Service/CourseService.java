@@ -151,6 +151,35 @@ public class CourseService {
         }
     }
 
+    public String enrollStudentInCourse(String token, EnrollRequest enrollRequest) {
+        Long studentID = jwtService.extractUserId(token);
+
+        Student student = studentRepository.findById(studentID)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with ID: " + studentID));
+
+        Course course = courseRepository.findById(enrollRequest.getCourseId())
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with ID: " + enrollRequest.getCourseId()));
+
+        if (student.getCourses().contains(course)) {
+            throw new IllegalStateException("Student is already enrolled in this course.");
+        }
+
+        student.getCourses().add(course);
+        course.getStudents().add(student);
+        studentRepository.save(student);
+        courseRepository.save(course);
+
+        return "Student: " + student.getName()+" enrolled successfully in course: " + course.getTitle();
+    }
+
+
+    public ApiResponse getCourseDetails(String jwtToken, Long id) {
+
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with ID: " + id));
+
+        return  new ApiResponse<>(true, "Course details are in below.", course);
+    }
 
     private ApiResponse<Void> createApiResponse(boolean success, String message){
         return new ApiResponse<Void>(success, message);

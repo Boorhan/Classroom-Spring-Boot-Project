@@ -1,7 +1,6 @@
 package com.demo.classroom.Controller;
 
 import com.demo.classroom.DTO.*;
-import com.demo.classroom.Service.StudentService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,7 +27,6 @@ import org.springframework.validation.BindingResult;
 public class DashboardController {
 
     private final CourseService courseService;
-    private final StudentService studentService;
 
     @PostMapping(value = "/course/create", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('TEACHER')") 
@@ -61,7 +59,7 @@ public class DashboardController {
             @RequestBody EnrollRequest enrollRequest,
             @RequestHeader("Authorization") String token) {
         String jwtToken = token.substring(7);
-        String response = studentService.enrollStudentInCourse(jwtToken, enrollRequest);
+        String response = courseService.enrollStudentInCourse(jwtToken, enrollRequest);
         return ResponseEntity.ok()
                 .body(new ApiResponse<>(true, response, null));
     }
@@ -86,5 +84,14 @@ public class DashboardController {
     public ResponseEntity<ApiResponse> getDashboard(@RequestHeader("Authorization") String token) {
         String jwtToken = token.substring(7);
         return ResponseEntity.ok().body(courseService.goToDashboard(jwtToken));
+    }
+
+    @GetMapping("/course/details")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse> getCourseDetails(
+            @RequestBody Map<String, Long> request,
+            @RequestHeader("Authorization") String token) {
+        String jwtToken = token.substring(7);
+        return ResponseEntity.ok().body(courseService.getCourseDetails(jwtToken, request.get("courseId")));
     }
 }
