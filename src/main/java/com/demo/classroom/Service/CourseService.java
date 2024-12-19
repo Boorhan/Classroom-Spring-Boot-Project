@@ -3,12 +3,13 @@ package com.demo.classroom.Service;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
+
+import com.demo.classroom.DTO.*;
+import com.demo.classroom.Entity.Student;
+import com.demo.classroom.Exception.ResourceNotFoundException;
+import com.demo.classroom.Repository.StudentRepository;
 import org.springframework.stereotype.Service;
 
-import com.demo.classroom.DTO.ApiResponse;
-import com.demo.classroom.DTO.BookDTO;
-import com.demo.classroom.DTO.CourseDTO;
-import com.demo.classroom.DTO.GetCourseDTO;
 import com.demo.classroom.Entity.Book;
 import com.demo.classroom.Entity.Course;
 import com.demo.classroom.Entity.Teacher;
@@ -31,7 +32,9 @@ public class CourseService {
 
     private final TeacherRepository teacherRepository;
 
-    private final JwtService jwtService; 
+    private final JwtService jwtService;
+
+    private final StudentRepository studentRepository;
 
     @Transactional
     public ApiResponse<Void> createCourse(CourseDTO courseDTO, String token) {
@@ -83,6 +86,38 @@ public class CourseService {
         }
     
         return courseDTOs;
+    }
+
+    public List<EnhancedCourseResponse> getAllCourses(String token) {
+        Long studentId = jwtService.extractUserId(token);
+        Student currentStudent = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with ID: " + studentId));
+
+        List<Course> courses = courseRepository.findAll();
+
+        return courses.stream()
+                .map(course -> {
+                    List<BookDTO> books = course.getBooks().stream()
+                            .map(book -> new BookDTO(book.getName(), book.getAuthor()))
+                            .collect(Collectors.toList());
+
+                    String teacherName = course.getTeachers().isEmpty()
+                            ? "No Teacher Assigned"
+                            : course.getTeachers().get(0).getName();
+
+                    int numberOfStudentsEnrolled = course.getStudents().size();
+
+                    boolean isStudentEnrolled = course.getStudents().contains(currentStudent);
+
+                    return new EnhancedCourseResponse(
+                            course.getTitle(),
+                            books,
+                            teacherName,
+                            numberOfStudentsEnrolled,
+                            isStudentEnrolled
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
     private ApiResponse<Void> createApiResponse(boolean success, String message){

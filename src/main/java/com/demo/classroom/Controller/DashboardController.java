@@ -1,14 +1,13 @@
 package com.demo.classroom.Controller;
 
+import com.demo.classroom.DTO.*;
+import com.demo.classroom.Service.StudentService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.demo.classroom.DTO.ApiResponse;
-import com.demo.classroom.DTO.CourseDTO;
-import com.demo.classroom.DTO.GetCourseDTO;
 import com.demo.classroom.Service.CourseService;
 import com.demo.classroom.Utility.Constants;
 import com.demo.classroom.Utility.ErrorMessages;
@@ -29,6 +28,7 @@ import org.springframework.validation.BindingResult;
 public class DashboardController {
 
     private final CourseService courseService;
+    private final StudentService studentService;
 
     @PostMapping(value = "/course/create", consumes = "application/json", produces = "application/json")
     @PreAuthorize("hasRole('TEACHER')") 
@@ -55,10 +55,24 @@ public class DashboardController {
             ResponseEntity.badRequest().body(apiResponse);
     }
 
+    @PostMapping("course/enroll")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse> enrollStudentInCourse(
+            @RequestBody EnrollRequest enrollRequest,
+            @RequestHeader("Authorization") String token) {
+        String jwtToken = token.substring(7);
+        String response = studentService.enrollStudentInCourse(jwtToken, enrollRequest);
+        return ResponseEntity.ok()
+                .body(new ApiResponse<>(true, response, null));
+    }
+
     @GetMapping("/course/all")
     @PreAuthorize("hasRole('STUDENT')") 
-    public ResponseEntity<ApiResponse<?>> getAllCourses() {
-        List<GetCourseDTO> courses = courseService.getAllCourses();
+    public ResponseEntity<ApiResponse<?>> getAllCourses(@RequestHeader("Authorization") String token) {
+        //List<GetCourseDTO> courses = courseService.getAllCourses();
+
+        String jwtToken = token.substring(7);
+        List<EnhancedCourseResponse> courses = courseService.getAllCourses(jwtToken);
         if (courses == null || courses.isEmpty()) {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(false, Constants.COURSE_NOT_AVAILABLE.getMessage(), null));
