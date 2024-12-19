@@ -11,6 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 public class EnhancedCourseResponse {
     private String courseTitle;
+    private Long courseId;
     private List<BookDTO> books;
     private String teacherName;
     private int numberOfStudentsEnrolled;

@@ -111,6 +111,7 @@ public class CourseService {
 
                     return new EnhancedCourseResponse(
                             course.getTitle(),
+                            course.getId(),
                             books,
                             teacherName,
                             numberOfStudentsEnrolled,
